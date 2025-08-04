@@ -6,8 +6,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description"
-        content="QResto هو أسرع حل للقائمة الرقمية الذكية لزيادة مبيعات مطعمك وتبسيط التحديثات دون الحاجة إلى طباعة.">
-    <title>QResto — القائمة الرقمية الذكية</title>
+        content="QRivo هو أسرع حل للقائمة الرقمية الذكية لزيادة مبيعات مطعمك وتبسيط التحديثات دون الحاجة إلى طباعة.">
+    <title>QRivo — القائمة الرقمية الذكية</title>
 
     <!-- ========= FONTS ========= -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -47,7 +47,6 @@
         h5,
         h6 {
             font-family: 'Cairo', 'Inter', sans-serif;
-            /* استخدام Cairo للعناوين */
             font-weight: 700;
         }
 
@@ -277,7 +276,7 @@
     <!-- ===== NAVBAR ===== -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-transparent position-absolute w-100 sticky-nav">
         <div class="container">
-            <a class="navbar-brand text-white" href="#">QResto</a>
+            <a class="navbar-brand text-white" href="#">QRivo</a>
             <button class="navbar-toggler border-0 text-white" type="button" data-bs-toggle="collapse"
                 data-bs-target="#navMenu">
                 <span class="navbar-toggler-icon"></span>
@@ -445,7 +444,7 @@
                                 <li>٣ قوائم ديناميكية</li>
                                 <li>أكواد QR ملونة</li>
                                 <li>إحصاءات الزيارات</li>
-                                <li>بدون علامة QResto</li>
+                                <li>بدون علامة QRivo</li>
                             </ul>
                             <a href="#cta" class="btn btn-primary w-100">تجربة مجانية ‎14‎ يوم</a>
                         </div>
@@ -480,14 +479,14 @@
                 <div class="col-md-4">
                     <div class="testimonial-card h-100 d-flex flex-column">
                         <div class="d-flex align-items-center mb-3">
-                            <img src="https://coffeemoca.ma/assets/images/logo/logo.png" alt="Avatar"
+                            <img src="" alt="Avatar"
                                 class="testimonial-avatar">
                             <div>
                                 <h6 class="mb-0 fw-semibold">أمين ب.</h6>
                                 <small class="text-muted">صاحب مقهى أطلس</small>
                             </div>
                         </div>
-                        <p class="mb-0 small">« منذ اعتماد QResto لاحظ زبائننا سهولة الوصول للمعلومات، وقللنا تكاليف
+                        <p class="mb-0 small">« منذ اعتماد QRivo لاحظ زبائننا سهولة الوصول للمعلومات، وقللنا تكاليف
                             الطباعة بنسبة ‎90%‎. »</p>
                     </div>
                 </div>
@@ -586,8 +585,8 @@
         <div class="container">
             <div class="row gy-4 align-items-center">
                 <div class="col-md-6 text-md-end text-center">
-                    <span class="fw-semibold text-white fs-5">QResto</span>
-                    <p class="small mb-0 mt-2">&copy; 2025&nbsp;QResto Inc. جميع الحقوق محفوظة.</p>
+                    <span class="fw-semibold text-white fs-5">QRivo</span>
+                    <p class="small mb-0 mt-2">&copy; 2025&nbsp;QRivo Inc. جميع الحقوق محفوظة.</p>
                 </div>
                 <div class="col-md-6">
                     <ul class="list-inline mb-0 text-md-start text-center small">

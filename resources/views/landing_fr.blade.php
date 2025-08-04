@@ -4,8 +4,8 @@
     <!-- ========= META ========= -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="QResto est la solution de menu digital la plus rapide pour moderniser votre restaurant, augmenter vos ventes et simplifier vos mises à jour — sans impression.">
-    <title>QResto — Menu Digital Intelligent</title>
+    <meta name="description" content="QRivo est la solution de menu digital la plus rapide pour moderniser votre restaurant, augmenter vos ventes et simplifier vos mises à jour — sans impression.">
+    <title>QRivo — Menu Digital Intelligent</title>
 
     <!-- ========= FONTS ========= -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -122,7 +122,7 @@
 <!-- ===== NAVBAR ===== -->
 <nav class="navbar navbar-expand-lg navbar-dark bg-transparent position-absolute w-100 sticky-nav">
     <div class="container">
-        <a class="navbar-brand text-white" href="#">QResto</a>
+        <a class="navbar-brand text-white" href="#">QRivo</a>
         <button class="navbar-toggler border-0 text-white" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
             <span class="navbar-toggler-icon"></span>
         </button>
@@ -283,7 +283,7 @@
                             <li>3 menus dynamiques</li>
                             <li>QR codes couleurs</li>
                             <li>Statistiques de consultation</li>
-                            <li>Pas de branding QResto</li>
+                            <li>Pas de branding QRivo</li>
                         </ul>
                         <a href="#cta" class="btn btn-primary w-100">Essai gratuit 14 j</a>
                     </div>
@@ -323,7 +323,7 @@
                             <small class="text-muted">Propriétaire — Café Atlas</small>
                         </div>
                     </div>
-                    <p class="mb-0 small">« Depuis que nous avons adopté QResto, nos clients trouvent immédiatement les informations qu’ils cherchent et nous avons diminué nos coûts d’impression de 90 %. »</p>
+                    <p class="mb-0 small">« Depuis que nous avons adopté QRivo, nos clients trouvent immédiatement les informations qu’ils cherchent et nous avons diminué nos coûts d’impression de 90&nbsp;%. »</p>
                 </div>
             </div>
             <div class="col-md-4">
@@ -335,7 +335,7 @@
                             <small class="text-muted">Manager — Pizzeria Napoli</small>
                         </div>
                     </div>
-                    <p class="mb-0 small">« Le multilingue a été un game-changer pour nos touristes. Les ventes de desserts ont augmenté grâce aux photos alléchantes ! »</p>
+                    <p class="mb-0 small">« Le multilingue a été un game-changer pour nos touristes. Les ventes de desserts ont augmenté grâce aux photos alléchantes&nbsp;! »</p>
                 </div>
             </div>
             <div class="col-md-4">
@@ -362,7 +362,7 @@
             <div class="accordion-item">
                 <h2 class="accordion-header" id="faq1">
                     <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faqCollapse1">
-                        Comment fonctionne la période d’essai ?
+                        Comment fonctionne la période d’essai&nbsp;?
                     </button>
                 </h2>
                 <div id="faqCollapse1" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
@@ -374,7 +374,7 @@
             <div class="accordion-item">
                 <h2 class="accordion-header" id="faq2">
                     <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faqCollapse2">
-                        Puis-je changer de formule à tout moment ?
+                        Puis-je changer de formule à tout moment&nbsp;?
                     </button>
                 </h2>
                 <div id="faqCollapse2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
@@ -386,7 +386,7 @@
             <div class="accordion-item">
                 <h2 class="accordion-header" id="faq3">
                     <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faqCollapse3">
-                        Dois-je réimprimer mon QR code si je change un plat ?
+                        Dois-je réimprimer mon QR code si je change un plat&nbsp;?
                     </button>
                 </h2>
                 <div id="faqCollapse3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
@@ -413,8 +413,8 @@
     <div class="container">
         <div class="row gy-4 align-items-center">
             <div class="col-md-6 text-md-start text-center">
-                <span class="fw-semibold text-white fs-5">QResto</span>
-                <p class="small mb-0 mt-2">&copy; 2025 QResto Inc. Tous droits réservés.</p>
+                <span class="fw-semibold text-white fs-5">QRivo</span>
+                <p class="small mb-0 mt-2">&copy; 2025 QRivo Inc. Tous droits réservés.</p>
             </div>
             <div class="col-md-6">
                 <ul class="list-inline mb-0 text-md-end text-center small">

@@ -54,7 +54,7 @@ class RestaurantMenuController extends Controller
     }
 
 
-    public function showTest(Request $request)
+    public function showOld(Request $request)
     {
         /* ───────── Locale & query param ───────── */
         $default_language = $request->query('lang', 'en');
@@ -173,7 +173,7 @@ class RestaurantMenuController extends Controller
         ];
 
         /* ───────── Render view ───────── */
-        return view('welcome8', compact(
+        return view('welcome7', compact(
             'languages',
             'restaurant',
             'menu',

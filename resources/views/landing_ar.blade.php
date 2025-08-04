@@ -403,73 +403,83 @@
         </div>
     </section>
 
-    <!-- ===== PRICING ===== -->
-    <section id="pricing" class="py-5">
-        <div class="container">
-            <h2 class="text-center fw-bold mb-4">تسعير بسيط ومرن</h2>
-            <!-- Toggle -->
-            <div class="d-flex justify-content-center align-items-center mb-5 price-toggle">
-                <span class="ms-2 fw-semibold">شهري</span>
-                <input class="form-check-input" type="checkbox" id="billingToggle" aria-label="تبديل فترة الفوترة">
-                <span class="fw-semibold me-2">سنوي <span class="text-success">(خصم ‎15%‎)</span></span>
-            </div>
+   <!-- ===== PRICING ===== -->
+<section id="pricing" class="py-5">
+    <div class="container">
+        <h2 class="text-center fw-bold mb-4">تسعير بسيط ومرن</h2>
+        <!-- Toggle -->
+        <div class="d-flex justify-content-center align-items-center mb-5 price-toggle">
+            <span class="ms-2 fw-semibold">شهري</span>
+            <input class="form-check-input" type="checkbox" id="billingToggle" aria-label="تبديل فترة الفوترة">
+            <span class="fw-semibold me-2">سنوي <span class="text-success">(خصم 15%)</span></span>
+        </div>
 
-            <div class="row justify-content-center g-4">
-                <!-- Free -->
-                <div class="col-md-4">
-                    <div class="card price-card h-100">
-                        <div class="card-body text-center p-4">
-                            <h5 class="fw-bold">مجاني</h5>
-                            <p class="display-6 fw-bold my-3"><span class="price" data-monthly="0"
-                                    data-yearly="0">0</span> درهم</p>
-                            <ul class="list-unstyled mb-4 small">
-                                <li>قائمة ديناميكية واحدة</li>
-                                <li>رمز QR أبيض وأسود</li>
-                                <li>دعم عبر البريد الإلكتروني</li>
-                                <li>—</li>
-                            </ul>
-                            <a href="#cta" class="btn btn-outline-primary w-100">ابدأ الآن</a>
-                        </div>
+        <div class="row justify-content-center g-4">
+            <!-- Free -->
+            <div class="col-md-4">
+                <div class="card price-card h-100">
+                    <div class="card-body text-center p-4">
+                        <h5 class="fw-bold">مجاني</h5>
+                        <p class="display-6 fw-bold my-3"><span class="price" data-monthly="0" data-yearly="0">0</span> درهم</p>
+                        <p class="small mb-2">مثالي إذا كانت قائمتك صغيرة أو لديك قائمة واحدة</p>
+                        <ul class="list-unstyled mb-4 small text-start">
+                            <li>حتى <strong>10 أطباق</strong> مجانية</li>
+                            <li>رمز QR أبيض وأسود</li>
+                            <li>إحصاءات أساسية</li>
+                            <li>وجود علامة QRivo</li>
+                        </ul>
+                        <a href="#cta" class="btn btn-outline-primary w-100">ابدأ الآن</a>
                     </div>
                 </div>
-                <!-- Starter -->
-                <div class="col-md-4">
-                    <div class="card price-card featured h-100">
-                        <div class="card-body text-center p-4 position-relative">
-                            <span class="price-badge position-absolute top-0 start-0 mt-3 ms-3">الأكثر شيوعًا</span>
-                            <h5 class="fw-bold">Starter</h5>
-                            <p class="display-6 fw-bold my-3"><span class="price" data-monthly="59"
-                                    data-yearly="50">59</span> درهم<span class="fs-6 fw-normal">/شهر</span></p>
-                            <ul class="list-unstyled mb-4 small">
-                                <li>٣ قوائم ديناميكية</li>
-                                <li>أكواد QR ملونة</li>
-                                <li>إحصاءات الزيارات</li>
-                                <li>بدون علامة QRivo</li>
-                            </ul>
-                            <a href="#cta" class="btn btn-primary w-100">تجربة مجانية ‎14‎ يوم</a>
-                        </div>
+            </div>
+            <!-- Starter -->
+            <div class="col-md-4">
+                <div class="card price-card featured h-100">
+                    <div class="card-body text-center p-4 position-relative">
+                        <span class="price-badge position-absolute top-0 start-0 mt-3 ms-3">الأكثر شيوعًا</span>
+                        <h5 class="fw-bold">Starter</h5>
+                        <p class="display-6 fw-bold my-3">
+                            <span class="price" data-monthly="69" data-yearly="59">69</span> درهم
+                            <span class="fs-6 fw-normal">/شهر</span>
+                        </p>
+                        <p class="small mb-2">قائمة واحدة كاملة، عناصر غير محدودة</p>
+                        <ul class="list-unstyled mb-4 small text-start">
+                            <li>قائمة واحدة بعناصر غير محدودة</li>
+                            <li>أكواد QR ملونة</li>
+                            <li>متعدد اللغات والعملات</li>
+                            <li>إحصاءات مفصلة</li>
+                            <li>بدون علامة QRivo</li>
+                        </ul>
+                        <a href="#cta" class="btn btn-primary w-100">تجربة مجانية 14 يوم</a>
                     </div>
                 </div>
-                <!-- Pro -->
-                <div class="col-md-4">
-                    <div class="card price-card h-100">
-                        <div class="card-body text-center p-4">
-                            <h5 class="fw-bold">Pro</h5>
-                            <p class="display-6 fw-bold my-3"><span class="price" data-monthly="129"
-                                    data-yearly="110">129</span> درهم<span class="fs-6 fw-normal">/شهر</span></p>
-                            <ul class="list-unstyled mb-4 small">
-                                <li>قوائم غير محدودة</li>
-                                <li>أكواد QR مخصصة</li>
-                                <li>تكامل واتساب وإنستغرام</li>
-                                <li>دعم أولوية</li>
-                            </ul>
-                            <a href="#cta" class="btn btn-outline-primary w-100">تجربة مجانية ‎14‎ يوم</a>
-                        </div>
+            </div>
+            <!-- Pro -->
+            <div class="col-md-4">
+                <div class="card price-card h-100">
+                    <div class="card-body text-center p-4">
+                        <h5 class="fw-bold">Pro</h5>
+                        <p class="display-6 fw-bold my-3">
+                            <span class="price" data-monthly="149" data-yearly="127">149</span> درهم
+                            <span class="fs-6 fw-normal">/شهر</span>
+                        </p>
+                        <p class="small mb-2">لعدة قوائم واستخدام احترافي</p>
+                        <ul class="list-unstyled mb-4 small text-start">
+                            <li>قوائم غير محدودة</li>
+                            <li>أكواد QR مخصصة</li>
+                            <li>تكامل واتساب وإنستغرام</li>
+                            <li>وصول لـ API / تصدير</li>
+                            <li>دعم أولوية</li>
+                        </ul>
+                        <a href="#cta" class="btn btn-outline-primary w-100">تجربة مجانية 14 يوم</a>
                     </div>
                 </div>
             </div>
         </div>
-    </section>
+        <p class="text-center mt-3 small text-muted">يُطبَّق الخصم تلقائيًا على الاشتراك السنوي. لا توجد التزامات مخفية.</p>
+    </div>
+</section>
+
 
     <!-- ===== TESTIMONIALS ===== -->
     <section id="testimonials" class="py-5" style="background:var(--qr-light-bg);">

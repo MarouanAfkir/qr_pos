@@ -262,11 +262,12 @@
                     <div class="card-body text-center p-4">
                         <h5 class="fw-bold">Gratuit</h5>
                         <p class="display-6 fw-bold my-3"><span class="price" data-monthly="0" data-yearly="0">0</span> DH</p>
-                        <ul class="list-unstyled mb-4 small">
-                            <li>1 menu dynamique</li>
+                        <p class="small mb-2">Parfait si vous avez une petite carte ou un seul menu</p>
+                        <ul class="list-unstyled mb-4 small text-start">
+                            <li>Jusqu’à <strong>10 plats</strong> gratuits</li>
                             <li>QR code noir & blanc</li>
-                            <li>Support email</li>
-                            <li>—</li>
+                            <li>Statistiques basiques</li>
+                            <li>Branding QRivo visible</li>
                         </ul>
                         <a href="#cta" class="btn btn-outline-primary w-100">Commencer</a>
                     </div>
@@ -278,12 +279,17 @@
                     <div class="card-body text-center p-4 position-relative">
                         <span class="price-badge position-absolute top-0 end-0 mt-3 me-3">Populaire</span>
                         <h5 class="fw-bold">Starter</h5>
-                        <p class="display-6 fw-bold my-3"><span class="price" data-monthly="59" data-yearly="50">59</span> DH<span class="fs-6 fw-normal">/mois</span></p>
-                        <ul class="list-unstyled mb-4 small">
-                            <li>3 menus dynamiques</li>
+                        <p class="display-6 fw-bold my-3">
+                            <span class="price" data-monthly="69" data-yearly="59">69</span> DH
+                            <span class="fs-6 fw-normal">/mois</span>
+                        </p>
+                        <p class="small mb-2">1 menu complet, items illimités</p>
+                        <ul class="list-unstyled mb-4 small text-start">
+                            <li>1 menu avec items illimités</li>
                             <li>QR codes couleurs</li>
-                            <li>Statistiques de consultation</li>
-                            <li>Pas de branding QRivo</li>
+                            <li>Multilingue &amp; devises</li>
+                            <li>Statistiques détaillées</li>
+                            <li>Sans branding QRivo</li>
                         </ul>
                         <a href="#cta" class="btn btn-primary w-100">Essai gratuit 14 j</a>
                     </div>
@@ -294,11 +300,16 @@
                 <div class="card price-card h-100">
                     <div class="card-body text-center p-4">
                         <h5 class="fw-bold">Pro</h5>
-                        <p class="display-6 fw-bold my-3"><span class="price" data-monthly="129" data-yearly="110">129</span> DH<span class="fs-6 fw-normal">/mois</span></p>
-                        <ul class="list-unstyled mb-4 small">
+                        <p class="display-6 fw-bold my-3">
+                            <span class="price" data-monthly="149" data-yearly="127">149</span> DH
+                            <span class="fs-6 fw-normal">/mois</span>
+                        </p>
+                        <p class="small mb-2">Pour plusieurs menus et usage professionnel</p>
+                        <ul class="list-unstyled mb-4 small text-start">
                             <li>Menus illimités</li>
                             <li>QR codes personnalisés</li>
-                            <li>Intégrations WhatsApp & Instagram</li>
+                            <li>Intégrations WhatsApp &amp; Instagram</li>
+                            <li>Accès API / export</li>
                             <li>Assistance prioritaire</li>
                         </ul>
                         <a href="#cta" class="btn btn-outline-primary w-100">Essai gratuit 14 j</a>
@@ -306,8 +317,10 @@
                 </div>
             </div>
         </div>
+        <p class="text-center mt-3 small text-muted">Réduction automatique appliquée pour l'abonnement annuel. Aucun engagement caché.</p>
     </div>
 </section>
+
 
 <!-- ===== TESTIMONIALS ===== -->
 <section id="testimonials" class="py-5" style="background:var(--qr-light-bg);">

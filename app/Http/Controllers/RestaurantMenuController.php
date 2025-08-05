@@ -19,6 +19,7 @@ class RestaurantMenuController extends Controller
     public function show(Request $request, string $uuid)
     {
         $locale  = $request->get('lang', 'en');
+        $template = $request->get('template', 'welcome7');
         $baseUrl = config('services.qresto.base_url', 'https://qresto.foxirent.com/api');
         $token   = config('services.qresto.token');
 
@@ -36,7 +37,6 @@ class RestaurantMenuController extends Controller
             ->get("{$baseUrl}/restaurants/{$uuid}/items")
             ->throw()
             ->json();
-        $template = $request->get('template', 'welcome7');
         /* -------- Ensure the requested view exists -------- */
         if (! view()->exists($template)) {
             abort(404, "View [{$template}] not found.");

@@ -122,7 +122,9 @@
 <!-- ===== NAVBAR ===== -->
 <nav class="navbar navbar-expand-lg navbar-dark bg-transparent position-absolute w-100 sticky-nav">
     <div class="container">
-        <a class="navbar-brand text-white" href="#">QRivo</a>
+        <a class="navbar-brand text-white" href="#">
+            <img src="{{asset('assets/img/logo/accountLogo.png')}}" alt="QRivo Logo" class="d-inline-block align-text-top" width="110" >
+        </a>
         <button class="navbar-toggler border-0 text-white" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
             <span class="navbar-toggler-icon"></span>
         </button>

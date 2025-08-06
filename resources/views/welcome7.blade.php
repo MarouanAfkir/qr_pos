@@ -88,7 +88,7 @@
             width: 72px;
             height: 2px;
             background: #facc15;
-            margin: 2.5rem auto 0;
+            margin: 1.5rem auto 0;
             border-radius: 1px;
             opacity: .8
         }
@@ -113,7 +113,7 @@
 
         /* ----- MENU ITEMS ----- */
         .food-menu-section.section-padding {
-            padding-top: 2.5rem !important
+            padding-top: 0rem !important
         }
 
         .single-menu-items {
@@ -404,7 +404,7 @@
 
         <div class="food-menu-wrapper style1">
             <div class="container ">
-                <div class="food-menu-tab-wrapper style-bg pt-5">
+                <div class="food-menu-tab-wrapper style-bg pt-5 px-1 px-md-5">
 
                     <!-- title -->
                     <div class="title-area ">

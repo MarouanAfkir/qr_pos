@@ -200,7 +200,7 @@
           $img   = $item['image'] ?? asset('assets/img/menu/menuThumb1_1.png');
         @endphp
         <div class="menu-card" data-cat="{{ $slug }}">
-          <img loading="lazy" src="{{ $img }}" alt="{{ $item['name'] }}">
+          <img loading="lazy" src="{{ $img }}" alt="{{ $item['name'] }}">  
           <div class="menu-body">
             <h3>{{ $item['name'] }}</h3>
             @if($item['description'])
@@ -219,7 +219,8 @@
                     data-name="{{ e($item['name']) }}"
                     data-img="{{ $img }}"
                     data-desc="{{ e($item['description'] ?? '') }}"
-                    data-price="{!! $sale ? '<del>'.$price.'</del> '.$sale : $price !!}">
+                    data-price="{!! $sale ? '<del>'.$price.'</del> '.$sale : $price !!}"
+                    data-variations='@json($item["variations"] ?? [])'>
               {{ __('View') }}
             </button>
           </div>
@@ -233,13 +234,14 @@
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title"></h5>
+          <h5 class="modal-title text-white"></h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body text-center">
-          <img id="modalImg" src="" alt="" class="mb-3">
-          <p id="modalDesc"></p>
-          <h4 id="modalPrice" class="mt-2"></h4>
+          <img id="modalImg" src="" alt="" class="mb-3" style="max-width:100%;border-radius:.5rem;">
+          <p id="modalDesc" class="mb-2"></p>
+          <h4 id="modalPrice" class="mb-3"></h4>
+          <div id="modalExtras"></div>
         </div>
       </div>
     </div>
@@ -261,11 +263,14 @@
   <script src="{{ asset('assets/js/bootstrap.bundle.min.js') }}"></script>
   <script>
     const modal = new bootstrap.Modal('#itemModal');
+    const currency = '{{ trim($currency) }}';
+
     // FAB toggle
     document.getElementById('fab').onclick = () => {
       const panel = document.getElementById('filterPanel');
       panel.style.display = panel.style.display === 'flex' ? 'none' : 'flex';
     };
+
     // Filter buttons
     document.querySelectorAll('.filter-panel button').forEach(btn => {
       btn.onclick = () => {
@@ -277,6 +282,7 @@
         });
       };
     });
+
     // Live search
     document.getElementById('menuSearch').oninput = e => {
       const q = e.target.value.toLowerCase();  
@@ -285,13 +291,29 @@
         c.style.display = text.includes(q) ? 'flex' : 'none';
       });
     };
-    // View modal
+
+    // View modal with simplified variations
     document.querySelectorAll('.view-btn').forEach(btn => {
       btn.onclick = () => {
         document.querySelector('#itemModal .modal-title').innerText = btn.dataset.name;
         document.getElementById('modalImg').src = btn.dataset.img;
         document.getElementById('modalDesc').innerText = btn.dataset.desc || '{{ __("No description available.") }}';
         document.getElementById('modalPrice').innerHTML = btn.dataset.price;
+
+        const variations = JSON.parse(btn.getAttribute('data-variations') || '[]');
+        let extrasHtml = '';
+        variations.forEach(v => {
+          const extra = (v.options || []).find(o => parseFloat(o.price_adjustment) > 0);
+          if (extra) {
+            extrasHtml += `
+              <div class="mb-2">
+                <strong>${v.name}:</strong>
+                <strong>+${parseFloat(extra.price_adjustment).toFixed(2)}${currency}</strong>
+              </div>`;
+          }
+        });
+
+        document.getElementById('modalExtras').innerHTML = extrasHtml;
         modal.show();
       };
     });

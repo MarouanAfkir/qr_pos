@@ -79,9 +79,7 @@
         #itemModal .btn-close:hover{opacity:1}
         #itemModal .modal-body{padding:1.75rem}
         #itemModal img{width:170px;height:170px;object-fit:cover;border-radius:.75rem;flex-shrink:0}
-        #itemModal .detail-block{font-size:.95rem;color:#374151}
-        #itemModal .detail-block:not(:last-child){margin-bottom:.65rem}
-        #itemModal .opts-title{font-weight:600;margin-bottom:.25rem}
+        #modalExtras .detail-item{font-size:.95rem;color:#374151;margin-bottom:.65rem}
         @keyframes pop{0%{transform:scale(.85);opacity:0}100%{transform:scale(1);opacity:1}}
         @media(max-width:575.98px){#itemModal img{width:130px;height:130px}}
 
@@ -222,10 +220,7 @@
                                                             ? '<del class=&quot;text-muted me-1&quot;>' . $price . $currency . '</del> ' .
                                                               '<span class=&quot;text-theme-color2 fw-semibold&quot;>' . number_format($salePrice, 2) . $currency . '</span>'
                                                             : $price . $currency;
-
                                                         $ingredients = $item['ingredients'] ?? '';
-                                                        $calories    = $item['calories'] ?? '';
-                                                        $allergens   = $item['allergens'] ?? '';
                                                     @endphp
                                                     <div class="single-menu-items"
                                                          data-name="{{ e($item['name']) }}"
@@ -233,8 +228,6 @@
                                                          data-img="{{ $img }}"
                                                          data-price="{!! $priceHtml !!}"
                                                          data-ingredients="{{ e($ingredients) }}"
-                                                         data-calories="{{ $calories }}"
-                                                         data-allergens="{{ e($allergens) }}"
                                                          data-variations='@json($item["variations"] ?? [])'>
                                                         <div class="menu-item-thumb">
                                                             <img src="{{ $img }}" alt="{{ $item['name'] }}" loading="lazy">
@@ -284,12 +277,10 @@
                 <div class="modal-body">
                     <div class="d-flex flex-column flex-sm-row align-items-sm-start gap-3">
                         <img id="modalImg" src="" alt="">
-                        <div class="flex-grow-1">
+                        <div class="flex-grow-1 text-center text-sm-start">
                             <p id="modalDesc" class="mb-3"></p>
-                            <h5 id="modalPrice" class="fw-semibold"></h5>
-
-                            <!-- extra details go here -->
-                            <div id="modalExtraDetails" class="mt-3"></div>
+                            <h5 id="modalPrice" class="fw-semibold mb-3"></h5>
+                            <div id="modalExtras" class="text-start"></div>
                         </div>
                     </div>
                 </div>
@@ -335,52 +326,37 @@
             });
         });
 
-        /* ===== Item modal ===== */
+        /* ===== Item modal (Composition & simplified variations) ===== */
         const currency = '{{ trim($currency) }}';
         const itemModal = new bootstrap.Modal(document.getElementById('itemModal'));
 
         $(document).on('click', '.single-menu-items', function () {
-            const $i = $(this);
+            const $el = $(this);
+            $('#itemModal .modal-title').text($el.data('name'));
+            $('#modalImg').attr('src', $el.data('img'));
+            $('#modalDesc').text($el.data('desc') || '{{ __("No description available.") }}');
+            $('#modalPrice').html($el.data('price'));
 
-            $('#itemModal .modal-title').text($i.data('name'));
-            $('#modalImg').attr('src', $i.data('img'));
-            $('#modalDesc').text($i.data('desc') || '{{ __('No description available.') }}');
-            $('#modalPrice').html($i.data('price'));
-
-            // build extra details
             let html = '';
-            const ingredients = $i.data('ingredients');
-            const calories    = $i.data('calories');
-            const allergens   = $i.data('allergens');
-            const variations  = $i.attr('data-variations') ? JSON.parse($i.attr('data-variations')) : [];
+            const comp = $el.data('ingredients');
+            if (comp) {
+                html += `<div class="detail-item">
+                    <strong>{{ __("Composition") }}:</strong> ${comp}
+                </div>`;
+            }
 
-            if (ingredients) {
-                html += `<div class="detail-block"><strong>{{ __('Ingredients') }}:</strong> ${ingredients}</div>`;
-            }
-            if (calories) {
-                html += `<div class="detail-block"><strong>{{ __('Calories') }}:</strong> ${calories} kcal</div>`;
-            }
-            if (allergens) {
-                html += `<div class="detail-block"><strong>{{ __('Allergens') }}:</strong> ${allergens}</div>`;
-            }
-            if (variations && variations.length) {
-                html += `<div class="detail-block">
-                            <div class="opts-title">{{ __('Options') }}:</div>`;
-                variations.forEach(v => {
-                    html += `<div><em>${v.name}</em>`;
-                    html += '</div>';
-                    if (v.options && v.options.length) {
-                        v.options.forEach(opt => {
-                            const adj = parseFloat(opt.price_adjustment);
-                            const priceTxt = adj !== 0 ? ` (+${adj.toFixed(2)}${currency})` : '';
-                            html += `<div class="ps-3">– ${opt.name}${priceTxt}</div>`;
-                        });
-                    }
-                });
-                html += `</div>`;
-            }
-            $('#modalExtraDetails').html(html);
+            const variations = JSON.parse($el.attr('data-variations') || '[]');
+            variations.forEach(v => {
+                const extra = (v.options || []).find(o => parseFloat(o.price_adjustment) > 0);
+                if (extra) {
+                    html += `<div class="detail-item">
+                        <strong>${v.name}:</strong>
+                        <strong>+${parseFloat(extra.price_adjustment).toFixed(2)}${currency}</strong>
+                    </div>`;
+                }
+            });
 
+            $('#modalExtras').html(html);
             itemModal.show();
         });
 
@@ -390,7 +366,6 @@
             const $pills = $('#pills-tab'),
                   $panes = $('#pills-tabContent'),
                   $res   = $('#searchResults').empty();
-
             if (!q) {
                 $res.addClass('d-none');
                 $pills.removeClass('d-none');
@@ -400,7 +375,6 @@
             $pills.addClass('d-none');
             $panes.addClass('d-none');
             $res.removeClass('d-none');
-
             $('.single-menu-items').each(function () {
                 const $it = $(this),
                       n   = ($it.data('name') || '').toLowerCase(),

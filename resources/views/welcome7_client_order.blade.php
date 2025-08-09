@@ -130,36 +130,66 @@
         }
         .quick-tags .qtag:hover{transform:translateY(-1px)}
 
-        /* Categories */
+        /* ===== CATEGORIES ===== */
         .categories-wrapper{position:relative}
-        .cat-nav{
-            position:absolute; top:50%; transform:translateY(-50%); width:32px; height:32px; border-radius:50%;
-            display:flex; align-items:center; justify-content:center; background:#fff; border:1px solid var(--brand-2);
-            box-shadow:0 2px 10px rgba(0,0,0,.08); color:#7a5200; font-size:.8rem; z-index:5
-        }
-        .cat-nav.disabled{display:none}
-        .cat-prev{{ $isRTL ? ':right' : ':left' }}:.25rem;
-        .cat-next{{ $isRTL ? ':left' : ':right' }}:.25rem;
 
+        /* Mobile-first: one row, visible scrollbar, no wrap */
         .categories-scroll{
-            display:flex; flex-wrap:nowrap; gap:.5rem; margin:.1rem 0 .3rem; padding:0 1.2rem; overflow-x:auto;
-            -webkit-overflow-scrolling:touch; scroll-snap-type:x mandatory; scrollbar-width:none;
+            display:flex !important;
+            flex-wrap:nowrap !important;
+            gap:.5rem;
+            margin:.1rem 0 .3rem;
+            padding:0 1.2rem .4rem; /* extra bottom for scrollbar */
+            overflow-x:auto;
+            overflow-y:hidden;
+            -webkit-overflow-scrolling:touch;
+            scroll-snap-type:x mandatory;
+            touch-action:pan-x;
         }
-        .categories-scroll::-webkit-scrollbar{display:none}
         .categories-scroll .nav-item{flex:0 0 auto; scroll-snap-align:start}
         .categories-scroll .nav-link{
-            padding:.5rem .95rem; font-size:.9rem; font-weight:800; color:#5a3d1b;
+            padding:.5rem .95rem; font-size:.9rem; font-weight:800; color:#5a3d1b; white-space:nowrap;
             background:#fff7ee; border:1px solid rgba(196,154,108,.45);
             border-radius:14px; transition:.16s;
         }
         .categories-scroll .nav-link:hover{transform:translateY(-1px); box-shadow:0 4px 10px rgba(0,0,0,.06)}
         .categories-scroll .nav-link.active{color:#000; background:#f6e3cf; border-color:transparent; box-shadow:0 3px 10px rgba(0,0,0,.08)}
-        @media(min-width:576px){ .cat-nav{display:none} .categories-scroll{overflow:visible; flex-wrap:wrap; justify-content:center; gap:.6rem; padding:0} }
+
+        /* Visible thin scrollbar on mobile */
+        .categories-scroll{ scrollbar-color:#cfa984 #f5efe6; }
+        .categories-scroll::-webkit-scrollbar{ height:8px; }
+        .categories-scroll::-webkit-scrollbar-thumb{ background:#cfa984; border-radius:999px; }
+        .categories-scroll::-webkit-scrollbar-track{ background:#f5efe6; }
+
+        /* Arrow buttons (show on mobile too) */
+        .cat-nav{
+            position:absolute; top:50%; transform:translateY(-50%); width:32px; height:32px; border-radius:50%;
+            display:flex; align-items:center; justify-content:center; background:#fff; border:1px solid var(--brand-2);
+            box-shadow:0 2px 10px rgba(0,0,0,.08); color:#7a5200; font-size:.8rem; z-index:5
+        }
+        .cat-nav.disabled{opacity:0; pointer-events:none}
+        .cat-prev{{ $isRTL ? ':right' : ':left' }}:.25rem;
+        .cat-next{{ $isRTL ? ':left' : ':right' }}:.25rem;
+
+        /* On ≥576px: center them nicely as a grid; hide arrows */
+        @media(min-width:576px){
+            .categories-scroll{
+                overflow:visible;
+                display:grid !important;
+                grid-template-columns: repeat(auto-fit, minmax(135px, max-content));
+                justify-content:center;        /* centers the grid as a block */
+                gap:.6rem;
+                padding:0;
+                margin-left:auto; margin-right:auto;
+                max-width:1100px;              /* keeps lines visually centered in wide screens */
+            }
+            .cat-nav{display:none}
+        }
 
         /* ===== ITEMS ===== */
         .food-menu-section.section-padding{padding-top:0!important}
         .food-menu-tab-wrapper { padding-top:.2rem !important; }
-        .title-area{margin:.3rem 0 .5rem;}
+        .title-area{padding-top:1rem; margin:.1rem 0 .5rem;} /* top padding for Our Menu */
         .sub-title{font-weight:800;color:#7a5200;letter-spacing:.2px}
 
         .single-menu-items{
@@ -175,7 +205,7 @@
         .price-wrap del{color:#9ca3af; margin-inline-end:.35rem}
         .save-badge{background:#dcfce7; color:#065f46; border-radius:6px; font-size:.72rem; padding:.1rem .35rem; margin-inline-start:.35rem; font-weight:700}
 
-        /* ===== MODAL ===== */
+        /* ===== MODAL (option CARDS) ===== */
         #itemModal .modal-content{border:0; border-radius:1rem; box-shadow:0 10px 36px rgba(0,0,0,.18)}
         #itemModal .modal-header{
             background:#fff3cf;
@@ -186,14 +216,26 @@
         #itemModal .modal-body{padding:1rem 1rem 1.15rem}
         #itemModal img{width:120px; height:120px; object-fit:cover; border-radius:.8rem; box-shadow:0 6px 16px rgba(0,0,0,.1)}
         .lead-price{font-weight:800; color:var(--brand)}
-        .v-group{margin:.55rem 0}
-        .v-title{font-weight:800; margin-bottom:.3rem}
-        .opt-chip{
-            display:inline-flex; align-items:center; gap:.35rem; padding:.3rem .55rem; margin:.2rem .3rem .2rem 0;
-            border:1px solid var(--chip-b); background:var(--chip); border-radius:999px; cursor:pointer; user-select:none; transition:.15s
+        .v-group{margin:.85rem 0}
+        .v-title{font-weight:800; margin-bottom:.5rem}
+
+        .options-grid{
+            display:grid; gap:.55rem;
+            grid-template-columns: repeat(auto-fill,minmax(140px,1fr));
         }
-        .opt-chip.disabled{opacity:.45; cursor:not-allowed}
-        .opt-chip.active{border-color:var(--brand-2); box-shadow:0 0 0 4px var(--ring)}
+        .option-card{
+            display:block; user-select:none; cursor:pointer;
+            background:#fff; border:2px solid #f2e4d3; border-radius:.85rem; padding:.6rem .65rem;
+            transition:.15s; height:100%;
+        }
+        .option-card.disabled{opacity:.45; cursor:not-allowed}
+        .option-input{position:absolute; opacity:0; pointer-events:none; width:0; height:0}
+        .option-inner{display:flex; align-items:center; justify-content:space-between; gap:.75rem}
+        .option-name{font-weight:700; color:#1f2937}
+        .option-badge{background:#fff7ea; border:1px solid #f2e4d3; color:#6b4b2f; border-radius:.65rem; padding:.15rem .45rem; font-size:.8rem; white-space:nowrap}
+        .option-input:checked + .option-inner{border-radius:.6rem; box-shadow:0 0 0 4px var(--ring)}
+        .option-hint{font-size:.85rem; color:#6b7280; margin-top:.15rem}
+
         .qty-wrap{display:flex; align-items:center; gap:.45rem}
         .qty-btn{width:32px; height:32px; display:flex; align-items:center; justify-content:center; border-radius:8px; border:1px solid var(--chip-b); background:var(--chip)}
         .qty-input{width:54px; text-align:center; border:1px solid var(--chip-b); background:#fff; border-radius:8px; padding:.3rem 0}
@@ -205,7 +247,7 @@
         .btn-primary-cta:hover{background:#5c3f2e}
         .req-hint{font-size:.85rem; color:#b45309; display:none}
 
-        /* ===== CLIENT CART (no tables) ===== */
+        /* ===== CLIENT CART ===== */
         .cart-toggle{
             position:fixed; {{ $isRTL ? 'left' : 'right' }}:16px; bottom:16px; width:56px; height:56px; border-radius:50%;
             background:var(--brand); color:#fff; border:none; display:flex; align-items:center; justify-content:center;
@@ -302,7 +344,7 @@
                 <div class="col-12">
                     <div class="categories-wrapper">
                         <button type="button" class="cat-nav cat-prev" aria-label="{{ __('Scroll categories') }}"><i class="fa-solid fa-chevron-{{ $isRTL ? 'right' : 'left' }}"></i></button>
-                        <ul class="nav categories-scroll" id="pills-tab" role="tablist">
+                        <ul class="nav categories-scroll justify-content-center" id="pills-tab" role="tablist">
                             @foreach ($categories as $cat)
                                 @php $slug = Str::slug($cat['name']); @endphp
                                 <li class="nav-item">
@@ -456,6 +498,7 @@
                             <p id="modalDesc" class="mb-2"></p>
                             <h5 id="modalPrice" class="lead-price mb-3"></h5>
 
+                            <!-- Improved option cards -->
                             <div id="modalOptions"></div>
 
                             <div class="d-flex align-items-center justify-content-between mt-2">
@@ -495,7 +538,7 @@
         <div class="cart-body" id="cartBody"></div>
         <div class="cart-footer" >
             <div class="fw-bold">{{ __('Total') }}: <span id="cartTotal">0{{ $currency }}</span></div>
-            {{-- <button class="btn-confirm" id="confirmOrder"><i class="fa-solid fa-check me-1"></i>{{ __('Confirm Order') }}</button> --}}
+            <button class="btn-confirm" id="confirmOrder"><i class="fa-solid fa-check me-1"></i>{{ __('Confirm Order') }}</button>
         </div>
     </div>
 
@@ -634,7 +677,7 @@
             }
         });
 
-        /* ===== Modal logic: interactive variations ===== */
+        /* ===== Modal logic: option cards ===== */
         const itemModal = new bootstrap.Modal(document.getElementById('itemModal'));
         let currentItem = null;
 
@@ -645,18 +688,35 @@
                 const isSingle = (parseInt(v.max_selections||1,10) === 1);
                 const maxSel   = parseInt(v.max_selections||1,10);
                 const minSel   = parseInt(v.min_selections|| (v.is_required ? 1 : 0),10);
+                const vid = v.id || ('v'+vIdx);
 
-                html += `<div class="v-group" data-vid="${v.id||('v'+vIdx)}" data-single="${isSingle?1:0}" data-min="${minSel}" data-max="${maxSel}">
-                            <div class="v-title">${v.name}${v.is_required ? ' <span class="text-danger">*</span>' : ''}</div>`;
+                html += `<div class="v-group" data-vid="${vid}" data-single="${isSingle?1:0}" data-min="${minSel}" data-max="${maxSel}">
+                            <div class="v-title">${v.name}${v.is_required ? ' <span class="text-danger">*</span>' : ''}</div>
+                            <div class="options-grid">`;
+
                 (v.options||[]).forEach((o, oIdx) => {
-                    const disabled = String(o.is_available)==='0' ? 'disabled' : '';
-                    const def = String(o.is_default)==='1' ? ' data-default="1"' : '';
+                    const disabled = String(o.is_available)==='0';
+                    const def = String(o.is_default)==='1';
                     const adj = parseFloat(o.price_adjustment||0) || 0;
-                    html += `<span class="opt-chip ${disabled}" data-oid="${o.id||('o'+oIdx)}" data-adj="${adj}" ${def} ${disabled? 'aria-disabled="true"':''}>
-                                <i class="fa-solid ${isSingle?'fa-circle-dot':'fa-square'}"></i>
-                                <span>${o.name}</span>${adj ? ` <small>+${parseFloat(adj).toFixed(2)}{{ $currency }}</small>`:''}
-                             </span>`;
+                    const inputType = isSingle ? 'radio' : 'checkbox';
+                    const nameAttr  = isSingle ? `name="var_${vid}"` : '';
+                    const oid = o.id || ('o'+oIdx);
+
+                    html += `
+                        <label class="option-card ${disabled?'disabled':''}">
+                            <input class="option-input" type="${inputType}" ${nameAttr} value="${oid}" data-adj="${adj}" ${def?'data-default="1"':''} ${disabled?'disabled':''}>
+                            <div class="option-inner">
+                                <div class="option-name">${o.name}</div>
+                                <div class="option-badge">${adj ? ('+'+adj.toFixed(2)+'{{ $currency }}') : '&nbsp;'}</div>
+                            </div>
+                        </label>
+                    `;
                 });
+
+                html += `</div>`;
+                if(!isSingle){
+                    html += `<div class="option-hint">{{ __('You can select up to') }} ${maxSel} {{ __('option(s)') }}</div>`;
+                }
                 html += `</div>`;
             });
             return html;
@@ -666,8 +726,8 @@
             if(!currentItem) return;
             const base = parseFloat(currentItem.base);
             let adj = 0;
-            document.querySelectorAll('#modalOptions .opt-chip.active').forEach(chip=>{
-                adj += parseFloat(chip.getAttribute('data-adj')||0);
+            document.querySelectorAll('#modalOptions .option-input:checked').forEach(inp=>{
+                adj += parseFloat(inp.getAttribute('data-adj')||0);
             });
             const unit = base + adj;
             const qty  = parseInt(document.getElementById('qtyInput').value,10) || 1;
@@ -680,7 +740,7 @@
             document.querySelectorAll('#modalOptions .v-group').forEach(group=>{
                 const min = parseInt(group.getAttribute('data-min')||0,10);
                 if(min>0){
-                    const sel = group.querySelectorAll('.opt-chip.active').length;
+                    const sel = group.querySelectorAll('.option-input:checked').length;
                     if(sel < min){ ok = false; }
                 }
             });
@@ -689,40 +749,29 @@
             return ok;
         }
 
-        function enforceMax(groupEl, clickedChip){
+        function enforceMax(groupEl, changedInput){
             const single = groupEl.getAttribute('data-single') === '1';
             const max = parseInt(groupEl.getAttribute('data-max')|| (single?1:99),10);
-            let actives = groupEl.querySelectorAll('.opt-chip.active');
-
             if(single){
-                actives.forEach(ch=> ch.classList.remove('active'));
-                clickedChip.classList.add('active');
-            } else {
-                if(clickedChip.classList.contains('active')){
-                    clickedChip.classList.remove('active');
-                } else {
-                    if(actives.length >= max){ groupEl.style.transform='scale(1.01)'; setTimeout(()=>groupEl.style.transform='',120); return; }
-                    clickedChip.classList.add('active');
-                }
+                return; // radios handled by browser
+            }
+            const checked = groupEl.querySelectorAll('.option-input:checked');
+            if(checked.length > max){
+                changedInput.checked = false;
+                groupEl.style.transform='scale(1.01)'; setTimeout(()=>groupEl.style.transform='',120);
             }
         }
 
         function applyDefaults(){
             document.querySelectorAll('#modalOptions .v-group').forEach(group=>{
                 const single = group.getAttribute('data-single') === '1';
-                const defaults = group.querySelectorAll('.opt-chip[data-default="1"]:not(.disabled)');
-                if(defaults.length){
-                    if(single){
-                        defaults.forEach((c,i)=> c.classList.toggle('active', i===0));
-                    }else{
-                        defaults.forEach(c=> c.classList.add('active'));
-                    }
+                const inputs = group.querySelectorAll('.option-input:not([disabled])');
+                const defs   = group.querySelectorAll('.option-input[data-default="1"]:not([disabled])');
+                if(defs.length){
+                    if(single){ defs[0].checked = true; } else { defs.forEach(d=> d.checked = true); }
                 }else{
                     const min = parseInt(group.getAttribute('data-min')||0,10);
-                    const chips = group.querySelectorAll('.opt-chip:not(.disabled)');
-                    if(min>0 && chips.length===1){
-                        chips[0].classList.add('active');
-                    }
+                    if(min>0 && inputs.length===1){ inputs[0].checked = true; }
                 }
             });
         }
@@ -730,16 +779,14 @@
         function gatherSelections(){
             const selections = [];
             document.querySelectorAll('#modalOptions .v-group').forEach(group=>{
-                const vId = group.getAttribute('data-vid');
                 const vName = group.querySelector('.v-title').textContent.replace('*','').trim();
                 const opts = [];
-                group.querySelectorAll('.opt-chip.active').forEach(ch=>{
-                    const name = ch.querySelector('span')?.textContent || '';
-                    const adj = parseFloat(ch.getAttribute('data-adj')||0);
-                    const oid = ch.getAttribute('data-oid');
-                    opts.push({id:oid, name, adj});
+                group.querySelectorAll('.option-input:checked').forEach(inp=>{
+                    const name = inp.closest('.option-card').querySelector('.option-name')?.textContent || '';
+                    const adj  = parseFloat(inp.getAttribute('data-adj')||0);
+                    opts.push({name, adj});
                 });
-                if(opts.length) selections.push({variation_id:vId, name:vName, options:opts});
+                if(opts.length) selections.push({name:vName, options:opts});
             });
             return selections;
         }
@@ -773,10 +820,9 @@
                 currency: '{{ $currency }}'
             };
 
-            // hook chips
-            $('#modalOptions .opt-chip:not(.disabled)').on('click', function(){
-                const group = this.closest('.v-group');
-                enforceMax(group, this);
+            // bind option inputs (change)
+            $('#modalOptions').off('change').on('change', '.option-input', function(){
+                enforceMax(this.closest('.v-group'), this);
                 validateRequired(); recalcPrice();
             });
 
@@ -926,8 +972,8 @@
                 }))
             }));
             const payload = {
-                v: 1,                                // version
-                rid: '{{ hash('crc32b', $restaurantName) }}', // simple restaurant id hash
+                v: 1,
+                rid: '{{ hash('crc32b', $restaurantName) }}',
                 r: '{{ $restaurantName }}',
                 t: Date.now(),
                 cur: '{{ trim($currency) }}',
@@ -965,7 +1011,6 @@
         function generateQR(){
             const data = buildOrderPayload();
             const json = JSON.stringify(data);
-            // compress a little by base64 (optional – here plain JSON is okay for typical orders)
             const text = json;
             qrcodeBox.innerHTML = '';
             qrInstance = new QRCode(qrcodeBox, {
@@ -990,7 +1035,6 @@
                 return;
             }
             renderConfirmSummary();
-            // generate first QR
             setTimeout(()=> { generateQR(); downloadQR(); }, 10);
             confirmModal.show();
         });
@@ -999,7 +1043,6 @@
             generateQR(); downloadQR();
         });
         document.getElementById('downloadQR').addEventListener('click', (e)=>{
-            // href is set on generate; ensure present
             if(!e.currentTarget.href) { e.preventDefault(); generateQR(); downloadQR(); }
         });
         document.getElementById('printQR').addEventListener('click', ()=>{

@@ -49,10 +49,23 @@
         .header-meta span{color:#666;font-size:.9rem}
         .header-divider{width:72px;height:2px;background:#facc15;margin:1.5rem auto 0;border-radius:1px;opacity:.8}
 
-        /* ----- LANGUAGE SWITCHER ----- */
-        .lang-switcher .btn{background:#1f2937;border-color:#1f2937;color:#fff;font-weight:600;transition:.15s}
+        /* ----- LANGUAGE SWITCHER (improved dropdown design) ----- */
+        .lang-switcher .btn{
+            background:#1f2937;border-color:#1f2937;color:#fff;font-weight:600;transition:.15s
+        }
         .lang-switcher .btn:hover{background:#374151}
-        .lang-switcher .dropdown-menu{min-width:10rem;font-size:.875rem}
+        .lang-switcher .dropdown-menu{
+            min-width:12rem;font-size:.9rem;border:none;border-radius:.75rem;padding:.35rem;
+            background:#fff;box-shadow:0 12px 28px rgba(0,0,0,.15)
+        }
+        .lang-switcher .dropdown-item{
+            border-radius:.5rem;padding:.5rem .75rem;color:#111;transition:background .15s,color .15s
+        }
+        .lang-switcher .dropdown-item:hover{background:rgba(250,204,21,.15);color:#111}
+        .lang-switcher .dropdown-item.active,
+        .lang-switcher .dropdown-item:active{
+            background:#facc15;color:#111;font-weight:700
+        }
 
         /* ----- MENU ITEMS ----- */
         .food-menu-section.section-padding{padding-top:0rem!important}
@@ -326,7 +339,12 @@
             });
         });
 
-        /* ===== Item modal (Composition & simplified variations) ===== */
+        /* ===== Item modal (Composition & variations formatting rule) =====
+           Rule:
+           - If a variation has ONLY ONE option: show compact line "VariationName: OptionName (+X DH if any)".
+           - If a variation has MORE THAN ONE option: restore old style:
+               VariationName on its own line, then list each option as a sub-item with its price adjustment.
+        */
         const currency = '{{ trim($currency) }}';
         const itemModal = new bootstrap.Modal(document.getElementById('itemModal'));
 
@@ -346,15 +364,33 @@
             }
 
             const variations = JSON.parse($el.attr('data-variations') || '[]');
-            variations.forEach(v => {
-                const extra = (v.options || []).find(o => parseFloat(o.price_adjustment) > 0);
-                if (extra) {
-                    html += `<div class="detail-item">
-                        <strong>${v.name}:</strong>
-                        <strong>+${parseFloat(extra.price_adjustment).toFixed(2)}${currency}</strong>
-                    </div>`;
-                }
-            });
+
+            if (variations && variations.length) {
+                html += `<div class="detail-item"><strong>{{ __('Options') }}:</strong></div>`;
+                variations.forEach(v => {
+                    const opts = Array.isArray(v.options) ? v.options : [];
+                    if (!opts.length) return;
+
+                    if (opts.length === 1) {
+                        // Compact display for single-option variations
+                        const o = opts[0];
+                        const adj = parseFloat(o.price_adjustment || 0);
+                        const priceTxt = adj ? ` (+${adj.toFixed(2)}${currency})` : '';
+                        html += `<div class="ps-2 mb-2">
+                                    <em>${v.name}</em>: <strong>${o.name}</strong>${priceTxt}
+                                 </div>`;
+                    } else {
+                        // Old style list for multi-option variations
+                        html += `<div class="ps-1 mb-1"><em>${v.name}</em></div>`;
+                        opts.forEach(opt => {
+                            const adj = parseFloat(opt.price_adjustment || 0);
+                            const priceTxt = adj ? ` (+${adj.toFixed(2)}${currency})` : '';
+                            html += `<div class="ps-4">– ${opt.name}${priceTxt}</div>`;
+                        });
+                        html += `<div class="mb-2"></div>`;
+                    }
+                });
+            }
 
             $('#modalExtras').html(html);
             itemModal.show();

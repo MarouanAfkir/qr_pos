@@ -22,6 +22,9 @@
     /* Cart scoping per restaurant (prevents cart leaking between restaurants) */
     $restaurantId  = $restaurant['id'] ?? null;
     $restaurantKey = $restaurantId !== null ? ('r' . $restaurantId) : Str::slug($restaurantName);
+
+    /* Category popup mode via query ?category=popup */
+    $categoryPopup = strtolower((string)request('category')) === 'popup';
 @endphp
 <!DOCTYPE html>
 <html lang="{{ $default_language }}" dir="{{ $isRTL ? 'rtl' : 'ltr' }}">
@@ -121,18 +124,30 @@
             padding:.45rem 0;
             margin-bottom:1.2rem;
         }
+        /* Search + inline category button layout */
+        .search-row{ display:flex; gap:.5rem; align-items:center; }
         #menuSearch{
             border-radius:999px; padding:.6rem 1rem; font-size:.98rem;
-            border:2px solid var(--chip-b); background:#fff; transition:.2s; color:var(--ink);
+            border:2px solid var(--chip-b); background:#fff; transition:.2s; color:var(--ink); flex:1 1 auto;
         }
         #menuSearch::placeholder{color:#9b8f89}
         #menuSearch:focus{border-color:var(--brand-2); box-shadow:0 0 0 5px var(--ring); outline:0}
-        .quick-tags{display:flex; gap:.4rem; flex-wrap:wrap; justify-content:center; padding:.35rem 1rem .35rem}
-        .quick-tags .qtag{
-            border:1px solid var(--chip-b); background:var(--chip); color:#6b4b2f;
-            padding:.2rem .55rem; font-size:.78rem; border-radius:999px; cursor:pointer; transition:.15s
+
+        /* Inline Categories button (popup mode) */
+        .btn-cat-inline{
+            border:2px solid var(--chip-b);
+            background:var(--chip);
+            color:#6b4b2f;
+            border-radius:999px;
+            padding:.55rem .9rem;
+            font-weight:800;
+            display:inline-flex; align-items:center; gap:.45rem;
+            white-space:nowrap;
+            box-shadow:0 2px 8px rgba(0,0,0,.04);
+            transition:.15s;
         }
-        .quick-tags .qtag:hover{transform:translateY(-1px)}
+        .btn-cat-inline:hover{ transform:translateY(-1px); background:#fff7e6; box-shadow:0 6px 16px rgba(0,0,0,.08); }
+        .btn-cat-inline i{ font-size:.95rem; }
 
         /* ===== CATEGORIES ===== */
         .categories-wrapper{position:relative}
@@ -151,10 +166,10 @@
             touch-action:pan-x;
 
             /* Hide scrollbar across browsers while keeping scroll */
-            -ms-overflow-style: none;  /* IE/Edge */
-            scrollbar-width: none;     /* Firefox */
+            -ms-overflow-style: none;
+            scrollbar-width: none;
         }
-        .categories-scroll::-webkit-scrollbar{ display:none; } /* WebKit */
+        .categories-scroll::-webkit-scrollbar{ display:none; }
 
         .categories-scroll .nav-item{flex:0 0 auto; scroll-snap-align:start}
         .categories-scroll .nav-link{
@@ -190,6 +205,30 @@
             .cat-nav{display:none}
         }
 
+        /* ===== CATEGORY SHEET (popup mode) ===== */
+        .category-sheet{
+            height:min(70vh, 520px);
+            border-top-left-radius:16px; border-top-right-radius:16px;
+            box-shadow:0 -18px 40px rgba(0,0,0,.18);
+        }
+        .category-sheet .handle{
+            width:42px; height:5px; border-radius:999px; background:#ddd; margin:.4rem auto 0;
+        }
+        .cat-grid{
+            display:grid; grid-template-columns: repeat(auto-fill, minmax(150px,1fr));
+            gap:.6rem;
+        }
+        .cat-tile{
+            display:flex; align-items:center; justify-content:space-between; gap:.6rem;
+            background:#fff; border:1px solid var(--chip-b); border-radius:.9rem; padding:.7rem .8rem;
+            font-weight:700; color:#5a3d1b; transition:.15s; cursor:pointer;
+        }
+        .cat-tile:hover{transform:translateY(-2px); box-shadow:0 8px 18px rgba(0,0,0,.08)}
+        .cat-tile .qty{
+            background:#fff7ee; border:1px solid var(--chip-b); color:#6b4b2f;
+            font-size:.78rem; border-radius:999px; padding:.1rem .45rem;
+        }
+
         /* ===== ITEMS ===== */
         .food-menu-section.section-padding{padding-top:0!important}
         .food-menu-tab-wrapper { padding-top:.2rem !important; }
@@ -218,6 +257,15 @@
         }
         #itemModal .modal-title{font-weight:800; color:#5f3b0e; font-size:1.25rem}
         #itemModal .modal-body{padding:1rem 1rem 1.15rem}
+
+        /* Mobile-centered modal content */
+        @media (max-width:575.98px){
+            #itemModal .modal-body{ text-align:center; }
+            #itemModal img{ margin:0 auto; }
+            #itemModal .qty-wrap{ justify-content:center; }
+            #itemModal .cta-row{ justify-content:center; gap:.8rem; }
+        }
+
         #itemModal img{width:120px; height:120px; object-fit:cover; border-radius:.8rem; box-shadow:0 6px 16px rgba(0,0,0,.1)}
         .lead-price{font-weight:800; color:var(--brand)}
         .v-group{margin:.85rem 0}
@@ -234,42 +282,21 @@
         }
         .option-card.disabled{opacity:.45; cursor:not-allowed}
         .option-input{position:absolute; opacity:0; pointer-events:none; width:0; height:0}
-        .option-inner{
-            display:flex; align-items:center; justify-content:space-between; gap:.75rem;
-            position:relative;
-        }
+        .option-inner{display:flex; align-items:center; justify-content:space-between; gap:.75rem; position:relative;}
         .option-name{font-weight:700; color:#1f2937}
         .option-badge{background:#fff7ea; border:1px solid #f2e4d3; color:#6b4b2f; border-radius:.65rem; padding:.15rem .45rem; font-size:.8rem; white-space:nowrap}
-        /* Stronger selected state */
-        .option-card.is-selected{
-            border-color: var(--brand-2);
-            background:#fff9f2;
-            box-shadow:0 0 0 4px var(--ring);
-        }
-        .option-card:focus-within{
-            box-shadow:0 0 0 4px var(--ring);
-        }
-        /* Checkmark bubble that appears when selected */
-        .option-check{
-            position:absolute; top:6px; {{ $isRTL ? 'left' : 'right' }}:6px;
-            width:20px; height:20px; border-radius:50%;
-            background:var(--brand); color:#fff; display:flex; align-items:center; justify-content:center;
-            font-size:.7rem; opacity:0; transform:scale(.8); transition:.15s;
-        }
+        .option-card.is-selected{border-color: var(--brand-2); background:#fff9f2; box-shadow:0 0 0 4px var(--ring);}
+        .option-card:focus-within{box-shadow:0 0 0 4px var(--ring);}
+        .option-check{position:absolute; top:6px; {{ $isRTL ? 'left' : 'right' }}:6px; width:20px; height:20px; border-radius:50%; background:var(--brand); color:#fff; display:flex; align-items:center; justify-content:center; font-size:.7rem; opacity:0; transform:scale(.8); transition:.15s;}
         .option-card.is-selected .option-check{ opacity:1; transform:scale(1); }
-        /* Old subtle highlight still okay for keyboard nav */
         .option-input:checked + .option-inner{border-radius:.6rem}
-
         .option-hint{font-size:.85rem; color:#6b7280; margin-top:.15rem}
 
         .qty-wrap{display:flex; align-items:center; gap:.45rem}
         .qty-btn{width:32px; height:32px; display:flex; align-items:center; justify-content:center; border-radius:8px; border:1px solid var(--chip-b); background:var(--chip)}
         .qty-input{width:54px; text-align:center; border:1px solid var(--chip-b); background:#fff; border-radius:8px; padding:.3rem 0}
         .cta-row{display:flex; flex-wrap:wrap; align-items:center; gap:.6rem; justify-content:space-between; margin-top:.6rem}
-        .btn-primary-cta{
-            background:var(--brand); border:none; color:#fff; font-weight:800; padding:.55rem .95rem; border-radius:.7rem;
-            box-shadow:0 10px 22px rgba(111,78,55,.22); transition:.15s
-        }
+        .btn-primary-cta{background:var(--brand); border:none; color:#fff; font-weight:800; padding:.55rem .95rem; border-radius:.7rem; box-shadow:0 10px 22px rgba(111,78,55,.22); transition:.15s}
         .btn-primary-cta:hover{background:#5c3f2e}
         .req-hint{font-size:.85rem; color:#b45309; display:none}
 
@@ -364,38 +391,40 @@
     <div class="sticky-tools">
         <div class="container">
             <div class="row g-2 align-items-center justify-content-center">
-                <div class="col-12 col-md-7">
-                    <input id="menuSearch" type="search" class="form-control" placeholder="{{ __('Search menu…') }}" aria-label="{{ __('Search menu…') }}">
-                </div>
-                <div class="col-12">
-                    <div class="categories-wrapper">
-                        <button type="button" class="cat-nav cat-prev" aria-label="{{ __('Scroll categories') }}"><i class="fa-solid fa-chevron-{{ $isRTL ? 'right' : 'left' }}"></i></button>
-                        <ul class="nav categories-scroll justify-content-center" id="pills-tab" role="tablist" aria-label="{{ __('Categories') }}">
-                            @foreach ($categories as $cat)
-                                @php $slug = Str::slug($cat['name']); @endphp
-                                <li class="nav-item">
-                                    <button class="nav-link {{ $loop->first ? 'active' : '' }}"
-                                            id="pills-{{ $slug }}-tab" data-bs-toggle="pill"
-                                            data-bs-target="#pills-{{ $slug }}" type="button" role="tab"
-                                            aria-controls="pills-{{ $slug }}"
-                                            aria-selected="{{ $loop->first ? 'true' : 'false' }}">
-                                        {{ $cat['name'] }}
-                                    </button>
-                                </li>
-                            @endforeach
-                        </ul>
-                        <button type="button" class="cat-nav cat-next" aria-label="{{ __('Scroll categories') }}"><i class="fa-solid fa-chevron-{{ $isRTL ? 'left' : 'right' }}"></i></button>
+                <div class="col-12 col-md-8">
+                    <div class="search-row">
+                        <input id="menuSearch" type="search" class="form-control" placeholder="{{ __('Search menu…') }}" aria-label="{{ __('Search menu…') }}">
+                        @if($categoryPopup)
+                            <button type="button" id="openCategories" class="btn-cat-inline" title="{{ __('Categories') }}" aria-label="{{ __('Open categories') }}" aria-haspopup="dialog" aria-controls="categoriesSheet">
+                                <i class="fa-solid fa-list-ul"></i>
+                                <span class="d-none d-sm-inline">{{ __('Categories') }}</span>
+                            </button>
+                        @endif
                     </div>
                 </div>
-            </div>
 
-            {{-- Quick suggestion tags --}}
-            <div class="quick-tags">
-                <span class="qtag">🍔 {{ __('Burger') }}</span>
-                <span class="qtag">🍕 {{ __('Pizza') }}</span>
-                <span class="qtag">🥗 {{ __('Salad') }}</span>
-                <span class="qtag">☕ {{ __('Coffee') }}</span>
-                <span class="qtag">🍟 {{ __('Fries') }}</span>
+                <div class="col-12">
+                    <div class="categories-wrapper">
+                        @if(!$categoryPopup)
+                            <button type="button" class="cat-nav cat-prev" aria-label="{{ __('Scroll categories') }}"><i class="fa-solid fa-chevron-{{ $isRTL ? 'right' : 'left' }}"></i></button>
+                            <ul class="nav categories-scroll justify-content-center" id="pills-tab" role="tablist" aria-label="{{ __('Categories') }}">
+                                @foreach ($categories as $cat)
+                                    @php $slug = Str::slug($cat['name']); @endphp
+                                    <li class="nav-item">
+                                        <button class="nav-link {{ $loop->first ? 'active' : '' }}"
+                                                id="pills-{{ $slug }}-tab" data-bs-toggle="pill"
+                                                data-bs-target="#pills-{{ $slug }}" type="button" role="tab"
+                                                aria-controls="pills-{{ $slug }}"
+                                                aria-selected="{{ $loop->first ? 'true' : 'false' }}">
+                                            {{ $cat['name'] }}
+                                        </button>
+                                    </li>
+                                @endforeach
+                            </ul>
+                            <button type="button" class="cat-nav cat-next" aria-label="{{ __('Scroll categories') }}"><i class="fa-solid fa-chevron-{{ $isRTL ? 'left' : 'right' }}"></i></button>
+                        @endif
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -619,17 +648,47 @@
         </div>
     </div>
 
+    {{-- ===== Category Sheet (popup mode only) ===== --}}
+    @if($categoryPopup)
+    <div class="offcanvas offcanvas-bottom category-sheet" tabindex="-1" id="categoriesSheet" aria-labelledby="categoriesLabel">
+        <div class="handle" aria-hidden="true"></div>
+        <div class="offcanvas-header pb-2">
+            <h6 class="offcanvas-title fw-bold" id="categoriesLabel"><i class="fa-solid fa-list pe-1"></i> {{ __('Browse Categories') }}</h6>
+            <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="{{ __('Close') }}"></button>
+        </div>
+        <div class="offcanvas-body pt-0">
+            <div class="mb-3">
+                <input id="catFilter" type="search" class="form-control form-control-sm" placeholder="{{ __('Filter categories…') }}" aria-label="{{ __('Filter categories…') }}">
+            </div>
+            <div class="cat-grid" role="listbox" aria-label="{{ __('Categories') }}">
+                @foreach($categories as $cat)
+                    @php
+                        $slug = Str::slug($cat['name']);
+                        $count = is_countable($cat['items'] ?? null) ? count($cat['items']) : 0;
+                    @endphp
+                    <button class="cat-tile" type="button" data-slug="{{ $slug }}" data-name="{{ Str::lower($cat['name']) }}" role="option" aria-selected="false">
+                        <span class="name text-truncate">{{ $cat['name'] }}</span>
+                        <span class="qty">{{ $count }}</span>
+                    </button>
+                @endforeach
+            </div>
+        </div>
+    </div>
+    @endif
+
     <!-- JS assets -->
     <script src="{{ asset('assets/js/jquery-3.7.1.min.js') }}"></script>
     <script src="{{ asset('assets/js/bootstrap.bundle.min.js') }}"></script>
 
     <script>
+        const IS_CAT_POPUP = @json($categoryPopup);
+
         /* ===== Helpers ===== */
         function formatMoney(val){ return (parseFloat(val).toFixed(2)) + '{{ $currency }}'; }
         function escapeRegExp(s){ return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'); }
         function highlight(text, q){ if(!q) return text; const re = new RegExp(`(${escapeRegExp(q)})`,'ig'); return text.replace(re,'<mark>$1</mark>'); }
 
-        /* ===== Category arrows ===== */
+        /* ===== Category arrows (normal mode) ===== */
         const catStrip = document.querySelector('.categories-scroll');
         const prevBtn  = document.querySelector('.cat-prev');
         const nextBtn  = document.querySelector('.cat-next');
@@ -645,7 +704,7 @@
         window.addEventListener('resize', updateArrows);
         updateArrows();
 
-        /* Scroll active pill into view */
+        /* Scroll active pill into view (normal mode) */
         document.querySelectorAll('#pills-tab button[data-bs-toggle="pill"]').forEach(btn => {
             btn.addEventListener('shown.bs.tab', e => {
                 e.target.scrollIntoView({ behavior:'smooth', inline:'center', block:'nearest' });
@@ -657,18 +716,7 @@
         window.addEventListener('scroll', () => { toTop.style.display = window.scrollY > 500 ? 'flex' : 'none'; });
         toTop.addEventListener('click', () => window.scrollTo({top:0, behavior:'smooth'}));
 
-        /* Quick tags fill search */
-        document.querySelectorAll('.qtag').forEach(tag=>{
-            tag.addEventListener('click', ()=> {
-                const text = tag.textContent.replace(/^[^\w\u0600-\u06FF]+/,'').trim();
-                const input = document.getElementById('menuSearch');
-                input.value = text;
-                input.dispatchEvent(new Event('input'));
-                input.focus();
-            });
-        });
-
-        /* Live search (with highlight) — keep focus in the search input (do NOT shift to items) */
+        /* Live search (with highlight) — keep focus in the search input */
         $('#menuSearch').on('input', function () {
             const q = $(this).val().trim().toLowerCase();
             const $pills = $('#pills-tab'),
@@ -681,7 +729,7 @@
                 $panes.removeClass('d-none');
                 return;
             }
-            $pills.addClass('d-none');
+            $pills.addClass('d-none'); // safe if not present
             $panes.addClass('d-none');
             $res.removeClass('d-none');
 
@@ -699,7 +747,6 @@
             if (!$res.children().length) {
                 $res.html('<p class="text-center py-4 text-muted">{{ __('No items match your search.') }}</p>');
             }
-            /* IMPORTANT: Do not shift focus to results — removed the previous .focus() */
         });
 
         /* ===== Modal logic: option cards ===== */
@@ -726,8 +773,6 @@
                     const inputType = isSingle ? 'radio' : 'checkbox';
                     const nameAttr  = isSingle ? `name="var_${vid}"` : '';
                     const oid = o.id || ('o'+oIdx);
-
-                    /* Only render price badge when there IS an extra price */
                     const badge = adj ? `<div class="option-badge">+${adj.toFixed(2)}{{ $currency }}</div>` : '';
 
                     html += `
@@ -781,9 +826,7 @@
         function enforceMax(groupEl, changedInput){
             const single = groupEl.getAttribute('data-single') === '1';
             const max = parseInt(groupEl.getAttribute('data-max')|| (single?1:99),10);
-            if(single){
-                return; // radios handled by browser
-            }
+            if(single){ return; }
             const checked = groupEl.querySelectorAll('.option-input:checked');
             if(checked.length > max){
                 changedInput.checked = false;
@@ -805,7 +848,6 @@
             });
         }
 
-        /* Visually reflect checked state (strong highlight + checkmark) */
         function refreshSelectionStyles(){
             $('#modalOptions .option-card').each(function(){
                 const input = $(this).find('.option-input')[0];
@@ -1094,6 +1136,63 @@
             w.document.write(`<img src="${dataUrl}" style="width:100%;height:auto;"/>`);
             w.document.close(); w.focus(); w.print(); w.close();
         });
+
+        /* ===== Category Popup interactions ===== */
+        if (IS_CAT_POPUP) {
+            const openBtn   = document.getElementById('openCategories');
+            const sheetEl   = document.getElementById('categoriesSheet');
+            const catFilter = document.getElementById('catFilter');
+
+            const catOffcanvas = sheetEl ? new bootstrap.Offcanvas(sheetEl) : null;
+
+            function showCategoryBySlug(slug){
+                // Clear search UI to reveal panes
+                const input = document.getElementById('menuSearch');
+                if (input) input.value = '';
+                $('#searchResults').addClass('d-none');
+                $('#pills-tabContent').removeClass('d-none');
+
+                // Switch tab-pane manually (since top nav is hidden in popup mode)
+                document.querySelectorAll('#pills-tabContent .tab-pane').forEach(p=>{
+                    p.classList.remove('show','active');
+                });
+                const target = document.getElementById('pills-' + slug);
+                if (target) target.classList.add('show','active');
+
+                // Scroll a bit below sticky tools for context
+                const y = document.querySelector('.food-menu-section')?.getBoundingClientRect().top + window.scrollY - 60;
+                if (!isNaN(y)) window.scrollTo({ top: y, behavior: 'smooth' });
+            }
+
+            openBtn?.addEventListener('click', () => {
+                catOffcanvas?.show();
+                setTimeout(()=>catFilter?.focus(), 150);
+            });
+
+            sheetEl?.querySelectorAll('.cat-tile').forEach(btn=>{
+                btn.addEventListener('click', ()=>{
+                    const slug = btn.getAttribute('data-slug');
+                    showCategoryBySlug(slug);
+                    catOffcanvas?.hide();
+                });
+            });
+
+            // Filter categories inside sheet
+            catFilter?.addEventListener('input', (e)=>{
+                const q = (e.target.value || '').trim().toLowerCase();
+                sheetEl.querySelectorAll('.cat-tile').forEach(tile=>{
+                    const name = tile.getAttribute('data-name') || '';
+                    tile.style.display = (!q || name.includes(q)) ? '' : 'none';
+                });
+            });
+
+            // Keyboard quick open
+            window.addEventListener('keydown', (e)=>{
+                if ((e.key==='c' || e.key==='C') && !e.target.closest('input,textarea')) {
+                    catOffcanvas?.show();
+                }
+            });
+        }
     </script>
 </body>
 </html>

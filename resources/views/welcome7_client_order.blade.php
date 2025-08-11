@@ -18,6 +18,10 @@
     $currency    = ' DH';
 
     $isRTL = in_array(strtolower($default_language), ['ar','he','fa','ur']);
+
+    /* Cart scoping per restaurant (prevents cart leaking between restaurants) */
+    $restaurantId  = $restaurant['id'] ?? null;
+    $restaurantKey = $restaurantId !== null ? ('r' . $restaurantId) : Str::slug($restaurantName);
 @endphp
 <!DOCTYPE html>
 <html lang="{{ $default_language }}" dir="{{ $isRTL ? 'rtl' : 'ltr' }}">
@@ -133,19 +137,25 @@
         /* ===== CATEGORIES ===== */
         .categories-wrapper{position:relative}
 
-        /* Mobile-first: one row, visible scrollbar, no wrap */
+        /* Mobile-first: one row, hide scrollbar, no wrap */
         .categories-scroll{
             display:flex !important;
             flex-wrap:nowrap !important;
             gap:.5rem;
             margin:.1rem 0 .3rem;
-            padding:0 1.2rem .4rem; /* extra bottom for scrollbar */
+            padding:0 1.2rem .4rem;
             overflow-x:auto;
             overflow-y:hidden;
             -webkit-overflow-scrolling:touch;
             scroll-snap-type:x mandatory;
             touch-action:pan-x;
+
+            /* Hide scrollbar across browsers while keeping scroll */
+            -ms-overflow-style: none;  /* IE/Edge */
+            scrollbar-width: none;     /* Firefox */
         }
+        .categories-scroll::-webkit-scrollbar{ display:none; } /* WebKit */
+
         .categories-scroll .nav-item{flex:0 0 auto; scroll-snap-align:start}
         .categories-scroll .nav-link{
             padding:.5rem .95rem; font-size:.9rem; font-weight:800; color:#5a3d1b; white-space:nowrap;
@@ -154,12 +164,6 @@
         }
         .categories-scroll .nav-link:hover{transform:translateY(-1px); box-shadow:0 4px 10px rgba(0,0,0,.06)}
         .categories-scroll .nav-link.active{color:#000; background:#f6e3cf; border-color:transparent; box-shadow:0 3px 10px rgba(0,0,0,.08)}
-
-        /* Visible thin scrollbar on mobile */
-        .categories-scroll{ scrollbar-color:#cfa984 #f5efe6; }
-        .categories-scroll::-webkit-scrollbar{ height:8px; }
-        .categories-scroll::-webkit-scrollbar-thumb{ background:#cfa984; border-radius:999px; }
-        .categories-scroll::-webkit-scrollbar-track{ background:#f5efe6; }
 
         /* Arrow buttons (show on mobile too) */
         .cat-nav{
@@ -177,11 +181,11 @@
                 overflow:visible;
                 display:grid !important;
                 grid-template-columns: repeat(auto-fit, minmax(135px, max-content));
-                justify-content:center;        /* centers the grid as a block */
+                justify-content:center;
                 gap:.6rem;
                 padding:0;
                 margin-left:auto; margin-right:auto;
-                max-width:1100px;              /* keeps lines visually centered in wide screens */
+                max-width:1100px;
             }
             .cat-nav{display:none}
         }
@@ -189,7 +193,7 @@
         /* ===== ITEMS ===== */
         .food-menu-section.section-padding{padding-top:0!important}
         .food-menu-tab-wrapper { padding-top:.2rem !important; }
-        .title-area{padding-top:1rem; margin:.1rem 0 .5rem;} /* top padding for Our Menu */
+        .title-area{padding-top:1rem; margin:.1rem 0 .5rem;}
         .sub-title{font-weight:800;color:#7a5200;letter-spacing:.2px}
 
         .single-menu-items{
@@ -226,14 +230,36 @@
         .option-card{
             display:block; user-select:none; cursor:pointer;
             background:#fff; border:2px solid #f2e4d3; border-radius:.85rem; padding:.6rem .65rem;
-            transition:.15s; height:100%;
+            transition:.15s; height:100%; position:relative;
         }
         .option-card.disabled{opacity:.45; cursor:not-allowed}
         .option-input{position:absolute; opacity:0; pointer-events:none; width:0; height:0}
-        .option-inner{display:flex; align-items:center; justify-content:space-between; gap:.75rem}
+        .option-inner{
+            display:flex; align-items:center; justify-content:space-between; gap:.75rem;
+            position:relative;
+        }
         .option-name{font-weight:700; color:#1f2937}
         .option-badge{background:#fff7ea; border:1px solid #f2e4d3; color:#6b4b2f; border-radius:.65rem; padding:.15rem .45rem; font-size:.8rem; white-space:nowrap}
-        .option-input:checked + .option-inner{border-radius:.6rem; box-shadow:0 0 0 4px var(--ring)}
+        /* Stronger selected state */
+        .option-card.is-selected{
+            border-color: var(--brand-2);
+            background:#fff9f2;
+            box-shadow:0 0 0 4px var(--ring);
+        }
+        .option-card:focus-within{
+            box-shadow:0 0 0 4px var(--ring);
+        }
+        /* Checkmark bubble that appears when selected */
+        .option-check{
+            position:absolute; top:6px; {{ $isRTL ? 'left' : 'right' }}:6px;
+            width:20px; height:20px; border-radius:50%;
+            background:var(--brand); color:#fff; display:flex; align-items:center; justify-content:center;
+            font-size:.7rem; opacity:0; transform:scale(.8); transition:.15s;
+        }
+        .option-card.is-selected .option-check{ opacity:1; transform:scale(1); }
+        /* Old subtle highlight still okay for keyboard nav */
+        .option-input:checked + .option-inner{border-radius:.6rem}
+
         .option-hint{font-size:.85rem; color:#6b7280; margin-top:.15rem}
 
         .qty-wrap{display:flex; align-items:center; gap:.45rem}
@@ -344,7 +370,7 @@
                 <div class="col-12">
                     <div class="categories-wrapper">
                         <button type="button" class="cat-nav cat-prev" aria-label="{{ __('Scroll categories') }}"><i class="fa-solid fa-chevron-{{ $isRTL ? 'right' : 'left' }}"></i></button>
-                        <ul class="nav categories-scroll justify-content-center" id="pills-tab" role="tablist">
+                        <ul class="nav categories-scroll justify-content-center" id="pills-tab" role="tablist" aria-label="{{ __('Categories') }}">
                             @foreach ($categories as $cat)
                                 @php $slug = Str::slug($cat['name']); @endphp
                                 <li class="nav-item">
@@ -463,7 +489,7 @@
                             @endforeach
                         </div>
 
-                        <div id="searchResults" class="row gx-4 d-none"></div>
+                        <div id="searchResults" class="row gx-4 d-none" aria-live="polite"></div>
                     </div>
                 </div>
             </div>
@@ -642,7 +668,7 @@
             });
         });
 
-        /* Live search (with highlight) */
+        /* Live search (with highlight) — keep focus in the search input (do NOT shift to items) */
         $('#menuSearch').on('input', function () {
             const q = $(this).val().trim().toLowerCase();
             const $pills = $('#pills-tab'),
@@ -672,9 +698,8 @@
             });
             if (!$res.children().length) {
                 $res.html('<p class="text-center py-4 text-muted">{{ __('No items match your search.') }}</p>');
-            } else {
-                $res.find('.single-menu-items').first().attr('tabindex','0').focus();
             }
+            /* IMPORTANT: Do not shift focus to results — removed the previous .focus() */
         });
 
         /* ===== Modal logic: option cards ===== */
@@ -702,12 +727,16 @@
                     const nameAttr  = isSingle ? `name="var_${vid}"` : '';
                     const oid = o.id || ('o'+oIdx);
 
+                    /* Only render price badge when there IS an extra price */
+                    const badge = adj ? `<div class="option-badge">+${adj.toFixed(2)}{{ $currency }}</div>` : '';
+
                     html += `
-                        <label class="option-card ${disabled?'disabled':''}">
+                        <label class="option-card ${disabled?'disabled':''}" ${isSingle ? 'role="radio"' : 'role="checkbox"'} aria-checked="false">
                             <input class="option-input" type="${inputType}" ${nameAttr} value="${oid}" data-adj="${adj}" ${def?'data-default="1"':''} ${disabled?'disabled':''}>
                             <div class="option-inner">
                                 <div class="option-name">${o.name}</div>
-                                <div class="option-badge">${adj ? ('+'+adj.toFixed(2)+'{{ $currency }}') : '&nbsp;'}</div>
+                                ${badge}
+                                <span class="option-check" aria-hidden="true"><i class="fa-solid fa-check"></i></span>
                             </div>
                         </label>
                     `;
@@ -776,6 +805,15 @@
             });
         }
 
+        /* Visually reflect checked state (strong highlight + checkmark) */
+        function refreshSelectionStyles(){
+            $('#modalOptions .option-card').each(function(){
+                const input = $(this).find('.option-input')[0];
+                const on = !!(input && input.checked);
+                $(this).toggleClass('is-selected', on).attr('aria-checked', on ? 'true' : 'false');
+            });
+        }
+
         function gatherSelections(){
             const selections = [];
             document.querySelectorAll('#modalOptions .v-group').forEach(group=>{
@@ -823,11 +861,13 @@
             // bind option inputs (change)
             $('#modalOptions').off('change').on('change', '.option-input', function(){
                 enforceMax(this.closest('.v-group'), this);
+                refreshSelectionStyles();
                 validateRequired(); recalcPrice();
             });
 
             // defaults & first calc
             applyDefaults();
+            refreshSelectionStyles();
             validateRequired(); recalcPrice();
 
             itemModal.show();
@@ -857,7 +897,8 @@
         });
 
         /* ===== Client Cart (localStorage) ===== */
-        const cartKey   = 'clientCart';
+        const RESTAURANT_KEY = @json($restaurantKey); // e.g., r123 or slug
+        const cartKey   = 'clientCart:' + RESTAURANT_KEY; // scoped per restaurant
         const cart      = document.getElementById('cart');
         const cartToggle= document.getElementById('cartToggle');
         const cartBody  = document.getElementById('cartBody');

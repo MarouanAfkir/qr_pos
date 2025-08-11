@@ -1,1002 +1,806 @@
 <!DOCTYPE html>
 <html lang="fr" dir="ltr">
-
 <head>
-    <!-- ========= META ========= -->
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description"
-        content="QRivo est la solution de menu digital la plus rapide pour moderniser votre restaurant, augmenter vos ventes et simplifier vos mises à jour — sans impression.">
-    <meta name="theme-color" content="#ff6b35">
-    <title>QRivo — Menu Digital Intelligent</title>
+  <!-- ========= META ========= -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="QRivo — Menu digital moderne : QR personnalisés, multilingue, statistiques en temps réel et (optionnel) commande en salle." />
+  <meta name="theme-color" content="#34A693" />
+  <title>QRivo — Le menu digital moderne</title>
+  <link rel="shortcut icon" href="{{ asset('assets/img/favicon.png') }}">
 
-    <!-- ========= FONTS ========= -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" fetchpriority="low">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@600;700;800&family=Manrope:wght@400;500;600;700&display=swap"
-        rel="stylesheet">
-    <link rel="shortcut icon" href="{{ asset('assets/img/favicon.png') }}">
+  <!-- ========= FONTS & CSS ========= -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" fetchpriority="low" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" />
 
-    <!-- ========= CSS & ICONS ========= -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    /* ============================================================
+       Calm, creamy palette (no browns) + simple, reliable UI
+    ============================================================ */
+    :root{
+      --brand:#34A693;        /* soft teal/sage */
+      --brand-600:#2c8e7f;
+      --brand-700:#257a6d;
 
-    <style>
-        /* ---------- Brand tokens ---------- */
-        :root {
-            --qr-primary: #ff6b35;
-            --qr-primary-700: #ff5a1b;
-            --qr-secondary: #10131f;
+      --peach:#FFE9D1;        /* creamy peach */
+      --mint:#EAF7F1;         /* soft mint */
+      --bg:#FBF7F2;           /* page background (cream) */
 
-            --bg: #ffffff;
-            --text: #11141c;
-            --muted: #495166;
-            --surface: #ffffff;
-            --border: #e8eaf0;
-            --section-bg: #f7f8fb;
+      --ink:#1f2937;
+      --muted:#667085;
+      --surface:#ffffff;
+      --surface-2:#F7FAF9;
+      --border:#efe6db;
+      --ring:rgba(52,166,147,.25);
 
-            --ring: #ffe2d6;
-            --success: #28a745;
+      --success:#16a34a;
+      --danger:#ef4444;
 
-            --nav-offset: 140px;
-            /* will be measured in JS for accuracy */
-        }
+      --radius:18px;
+      --shadow-1:0 6px 20px rgba(2,6,23,.06);
+      --shadow-2:0 16px 40px rgba(2,6,23,.10);
+    }
 
-        /* ---------- Base ---------- */
-        html {
-            scroll-behavior: smooth
-        }
+    html{scroll-behavior:smooth}
+    body{
+      font-family:'Manrope',system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+      color:var(--ink);
+      background:
+        radial-gradient(900px 480px at 80% -10%, rgba(52,166,147,.10), transparent 60%),
+        var(--bg);
+      overflow-x:hidden;
+    }
+    h1,h2,h3,h4,h5,h6{font-family:'Inter',sans-serif;letter-spacing:-.015em;font-weight:800}
+    .text-muted{color:var(--muted)!important}
 
-        body {
-            font-family: 'Manrope', sans-serif;
-            color: var(--text);
-            background: var(--bg);
-            overflow-x: hidden
-        }
+    /* ===== NAVBAR (enhanced UI/UX) ===== */
+    .navbar{
+      position:sticky; top:0; z-index:1040;
+      background:rgba(255,255,255,.86);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom:1px solid var(--border);
+      transition: box-shadow .25s ease, padding .2s ease, background .25s ease;
+      padding:.7rem 0;
+    }
+    .navbar::after{
+      content:"";
+      position:absolute; left:0; right:0; bottom:-1px; height:2px;
+      background: linear-gradient(90deg, var(--peach), var(--mint));
+      opacity:.55; pointer-events:none;
+    }
+    .navbar.scrolled{
+      background:#fff;
+      box-shadow:0 10px 28px rgba(0,0,0,.06);
+      padding:.45rem 0;
+    }
+    /* scroll progress bar (top, within navbar) */
+    #scrollProgress{
+      position:absolute; top:0; left:0; height:3px; width:0%;
+      background:linear-gradient(90deg, var(--brand), #8ecae6);
+      border-bottom-right-radius:3px; border-top-right-radius:3px;
+      transition: width .15s ease;
+    }
 
-        h1,
-        h2,
-        h3,
-        h4,
-        h5,
-        h6 {
-            font-family: 'Inter', sans-serif;
-            font-weight: 700;
-            letter-spacing: -0.015em
-        }
+    .navbar .navbar-brand strong{font-weight:800; letter-spacing:.2px}
+    .navbar .nav-link{
+      font-weight:600; padding:.45rem .8rem; border-radius:999px; position:relative; color:var(--ink);
+    }
+    .navbar .nav-link:hover,.navbar .nav-link:focus{
+      background:rgba(52,166,147,.10);
+      color:var(--ink);
+    }
+    .navbar .nav-link:focus-visible{
+      outline:0; box-shadow:0 0 0 4px var(--ring);
+    }
+    /* Animated underline indicator (desktop) */
+    .nav-group{position:relative}
+    .nav-indicator{
+      position:absolute; height:2px; bottom:-6px; left:0; width:0;
+      background:linear-gradient(90deg, var(--brand), #8ecae6);
+      border-radius:2px; opacity:0;
+      transition: transform .25s ease, width .25s ease, opacity .2s ease;
+      will-change: transform, width;
+      pointer-events:none;
+    }
 
-        .lead {
-            color: var(--muted)
-        }
+    .btn-primary{
+      --bs-btn-bg:var(--brand);
+      --bs-btn-border-color:var(--brand);
+      --bs-btn-hover-bg:var(--brand-600);
+      --bs-btn-hover-border-color:var(--brand-600);
+      box-shadow:0 10px 20px rgba(52,166,147,.22);
+      border-radius:12px; font-weight:700;
+    }
+    .btn-outline-primary{
+      --bs-btn-color:var(--brand);
+      --bs-btn-border-color:var(--brand);
+      --bs-btn-hover-color:#fff;
+      --bs-btn-hover-bg:var(--brand);
+      --bs-btn-hover-border-color:var(--brand);
+      border-radius:12px; font-weight:700;
+      background:transparent;
+    }
+    .btn-light{border-radius:12px;font-weight:700}
 
-        .btn-primary {
-            background: var(--qr-primary);
-            border: none;
-            box-shadow: 0 8px 20px rgba(255, 107, 53, .25)
-        }
+    /* Offcanvas (mobile menu) */
+    .offcanvas-nav {
+      background:#fff;
+      border-left:1px solid var(--border);
+    }
+    .offcanvas-nav .list-group-item{
+      border:0; padding:.9rem 0; font-weight:700;
+    }
+    .offcanvas-nav .list-group{
+      border:0; border-radius:0;
+    }
+    .offcanvas-header{
+      border-bottom:1px solid var(--border);
+      background:linear-gradient(90deg, var(--mint), var(--peach));
+    }
 
-        .btn-primary:hover {
-            background: var(--qr-primary-700)
-        }
+    /* ===== Hero ===== */
+    .hero{
+      padding:64px 0 56px;
+      background: linear-gradient(135deg, var(--peach) 0%, var(--mint) 100%);
+      border-bottom:1px solid var(--border);
+      position:relative; isolation:isolate;
+    }
+    .hero .badge-soft{
+      background:#fff; color:var(--brand); border:1px solid var(--border);
+      border-radius:999px; padding:.4rem .7rem; font-weight:700;
+      box-shadow:0 6px 16px rgba(0,0,0,.06);
+    }
+    .hero h1 .spark{
+      background:linear-gradient(90deg, var(--brand) 0%, #8ecae6 100%);
+      -webkit-background-clip:text; background-clip:text; color:transparent;
+    }
+    .phone{
+      width:320px; max-width:90%; aspect-ratio:9/19.5;
+      border:10px solid #0d1117; border-radius:38px; background:#000;
+      box-shadow:var(--shadow-2); position:relative; margin:0 auto; overflow:hidden;
+    }
+    .phone .screen{position:absolute; inset:0; background:#111827; display:grid; place-items:center}
+    .phone .screen img{width:100%; height:100%; object-fit:cover}
 
-        .btn-outline-primary {
-            border-color: var(--qr-primary);
-            color: var(--qr-primary)
-        }
+    /* ===== Sections / cards ===== */
+    .section-title{margin-bottom:.5rem}
+    .section-sub{color:var(--muted); margin-bottom:2rem}
+    .feature{
+      background:var(--surface); border:1px solid var(--border);
+      border-radius:var(--radius); padding:1.5rem; height:100%;
+      box-shadow:var(--shadow-1); transition:transform .18s ease, box-shadow .18s ease;
+    }
+    .feature:hover{transform:translateY(-4px); box-shadow:var(--shadow-2)}
+    .feature .icon{
+      width:48px;height:48px;border-radius:12px;display:grid;place-items:center;
+      color:var(--brand); background:rgba(52,166,147,.10); margin-bottom:.75rem;
+      border:1px solid var(--border); font-size:1.25rem;
+    }
 
-        .btn-outline-primary:hover {
-            background: var(--qr-primary);
-            color: #fff
-        }
+    .showcase{
+      background:var(--surface); border:1px solid var(--border);
+      border-radius:var(--radius); padding:1rem; box-shadow:var(--shadow-1);
+    }
+    .showcase .nav-link{border-radius:10px;font-weight:700;color:var(--muted)}
+    .showcase .nav-link.active{
+      color:var(--ink); background:rgba(52,166,147,.10);
+      border:1px solid rgba(52,166,147,.3);
+    }
+    .showcase .tab-pane{
+      border-radius:12px; background:var(--surface-2);
+      border:1px dashed var(--border); padding:1rem; min-height:280px;
+    }
 
-        .badge-soft {
-            background: var(--ring);
-            color: var(--qr-primary-700);
-            border-radius: 999px;
-            padding: .35rem .7rem;
-            font-weight: 600;
-            font-size: .8rem
-        }
+    .price-card{
+      background:var(--surface); border:1px solid var(--border);
+      border-radius:var(--radius); box-shadow:var(--shadow-1);
+      height:100%; transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+    }
+    .price-card:hover{transform:translateY(-4px); box-shadow:var(--shadow-2)}
+    .price-card.featured{border:2px solid var(--brand)}
+    .price-badge{
+      background:linear-gradient(90deg, var(--brand), #8ecae6);
+      color:#fff; font-size:.75rem; padding:.25rem .6rem; border-radius:.5rem;
+      box-shadow:0 6px 16px rgba(0,0,0,.08)
+    }
 
-        /* Highlight for hero keyword (no orange-on-orange) */
-        .highlight {
-            display: inline-block;
-            background: #fff;
-            color: #0d1117;
-            padding: .05rem .4rem;
-            border-radius: .4rem;
-            box-shadow: 0 6px 16px rgba(0, 0, 0, .15)
-        }
+    .toggle{
+      display:inline-flex; align-items:center; gap:.5rem;
+      background:var(--surface); border:1px solid var(--border);
+      border-radius:999px; padding:.3rem; box-shadow:var(--shadow-1);
+    }
+    .toggle .seg{
+      border-radius:999px; padding:.35rem .8rem; font-weight:700; cursor:pointer;
+      color:var(--muted);
+    }
+    .toggle .seg.active{background:rgba(52,166,147,.12); color:var(--ink); border:1px solid rgba(52,166,147,.28)}
 
-        /* ---------- Transparent, fixed navbar ---------- */
-        .sticky-nav {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            z-index: 1055;
-            background: transparent !important;
-            /* always transparent */
-            border-bottom: transparent;
-            box-shadow: none;
-        }
+    .testimonial{
+      background:var(--surface); border:1px solid var(--border);
+      border-radius:var(--radius); padding:1.25rem; height:100%; box-shadow:var(--shadow-1);
+    }
 
-        .navbar-brand {
-            font-weight: 800;
-            font-size: 1.05rem;
-        }
+    .cta{
+      background:
+        radial-gradient(900px 480px at 10% -10%, rgba(142,202,230,.25), transparent 60%),
+        linear-gradient(135deg, var(--mint), #DDEEFF);
+      padding:64px 0; border-top:1px solid var(--border); border-bottom:1px solid var(--border);
+    }
 
-        /* Logo: only height 110, no width */
-        .navbar-brand img {
-            height: 110px;
-            width: auto;
-            display: block
-        }
+    /* ===== Footer (unchanged, enhanced previously) ===== */
+    .site-footer{
+      background:var(--surface);
+      border-top:1px solid var(--border);
+      position:relative;
+      overflow:hidden;
+    }
+    .site-footer::before{
+      content:"";
+      position:absolute; left:0; right:0; top:0; height:2px;
+      background: linear-gradient(90deg, var(--mint), var(--peach));
+      opacity:.6;
+    }
+    .footer-brand{display:flex; align-items:center; gap:.6rem}
+    .footer-brand img{height:36px; width:auto}
+    .footer-card{background:var(--surface-2);border:1px solid var(--border);border-radius:14px;padding:1rem}
+    .footer-link{color:var(--ink); text-decoration:none}
+    .footer-link:hover{text-decoration:underline}
+    .social a{
+      width:38px; height:38px; display:inline-flex; align-items:center; justify-content:center;
+      border-radius:10px; border:1px solid var(--border); background:#fff; margin-right:.35rem; color:var(--ink);
+      transition: transform .12s ease, box-shadow .12s ease;
+    }
+    .social a:hover{ transform: translateY(-2px); box-shadow:0 8px 16px rgba(0,0,0,.08) }
 
-        /* Nav links */
-        .sticky-nav .nav-link {
-            position: relative;
-            font-weight: 600
-        }
-
-        .sticky-nav.navbar-dark .nav-link {
-            color: #fff
-        }
-
-        .sticky-nav.navbar-light .nav-link {
-            color: var(--text)
-        }
-
-        .sticky-nav .nav-link:hover {
-            opacity: .9
-        }
-
-        .sticky-nav .nav-link.active::after,
-        .sticky-nav .nav-link:hover::after {
-            content: "";
-            position: absolute;
-            left: .25rem;
-            right: .25rem;
-            bottom: -6px;
-            height: 2px;
-            background: linear-gradient(90deg, var(--qr-primary), #ff944d);
-            border-radius: 2px
-        }
-
-        /* CTA button style depending on context */
-        .brand-cta {
-            border: 1px solid;
-            transition: color .2s, background .2s, border-color .2s
-        }
-
-        .brand-cta--dark {
-            border-color: #ffffffcc;
-            color: #fff
-        }
-
-        .brand-cta--dark:hover {
-            background: #ffffff22;
-            color: #fff
-        }
-
-        .brand-cta--light {
-            border-color: var(--qr-primary);
-            color: var(--qr-primary)
-        }
-
-        .brand-cta--light:hover {
-            background: var(--qr-primary);
-            color: #fff
-        }
-
-        /* ---------- Hero ---------- */
-        .hero {
-            padding-top: calc(var(--nav-offset) + 40px);
-            /* room for fixed nav & tall logo */
-            background: radial-gradient(1200px 600px at 20% 0%, #ffb37c33 0%, transparent 60%), linear-gradient(135deg, #ff6b35 0%, #ffa94d 100%);
-            color: #fff;
-            padding-bottom: 5rem;
-            position: relative;
-            isolation: isolate;
-        }
-
-        .hero::after {
-            content: "";
-            position: absolute;
-            inset: auto -30% -20% -30%;
-            height: 380px;
-            background: radial-gradient(50% 60% at 50% 0%, #ffffff1a 0%, transparent 60%);
-            z-index: 0;
-            filter: blur(40px)
-        }
-
-        .hero-img {
-            max-width: 100%;
-            border-radius: 1.25rem;
-            filter: drop-shadow(0 1.25rem 2rem rgba(0, 0, 0, .2))
-        }
-
-        /* ---------- Trust logos ---------- */
-        .trust-logos {
-            gap: 14px
-        }
-
-        .trust-logos img {
-            height: 44px;
-            width: auto;
-            border-radius: 10px;
-            object-fit: cover;
-            opacity: .98;
-            box-shadow: 0 .35rem .9rem rgba(0, 0, 0, .15);
-            background: #fff
-        }
-
-        /* ---------- Sections / cards ---------- */
-        .section-title {
-            margin-bottom: 1rem
-        }
-
-        .section-sub {
-            color: var(--muted);
-            margin-bottom: 2.3rem
-        }
-
-        .section-divider {
-            height: 1px;
-            background: linear-gradient(90deg, transparent, var(--border), transparent)
-        }
-
-        .soft-bg {
-            background: var(--section-bg)
-        }
-
-        .feature-card {
-            border: 1px solid var(--border);
-            border-radius: 1rem;
-            padding: 1.75rem;
-            background: var(--surface);
-            box-shadow: 0 .6rem 1.2rem rgba(16, 24, 40, .06);
-            transition: transform .28s, box-shadow .28s;
-            height: 100%
-        }
-
-        .feature-card:hover {
-            transform: translateY(-6px);
-            box-shadow: 0 .9rem 1.7rem rgba(16, 24, 40, .09)
-        }
-
-        .feature-icon {
-            width: 56px;
-            height: 56px;
-            background: var(--section-bg);
-            border-radius: 14px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.4rem;
-            color: var(--qr-primary);
-            margin-bottom: 1rem
-        }
-
-        .step {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 1rem;
-            padding: 1.25rem;
-            height: 100%
-        }
-
-        .step .num {
-            width: 36px;
-            height: 36px;
-            border-radius: 999px;
-            background: var(--ring);
-            color: #a34522;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 800;
-            margin-bottom: .6rem
-        }
-
-        .price-card {
-            border-radius: 1rem;
-            overflow: hidden;
-            transition: transform .25s, box-shadow .25s, border-color .2s;
-            border: 1px solid var(--border);
-            height: 100%;
-            background: var(--surface)
-        }
-
-        .price-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 .7rem 1.5rem rgba(16, 24, 40, .08)
-        }
-
-        .price-card.featured {
-            box-shadow: 0 .9rem 1.9rem rgba(16, 24, 40, .12);
-            border: 2px solid var(--qr-primary)
-        }
-
-        .price-badge {
-            background: var(--qr-primary);
-            color: #fff;
-            font-size: .75rem;
-            padding: .25rem .6rem;
-            border-radius: .5rem
-        }
-
-        .testimonial-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 1rem;
-            padding: 1.5rem;
-            box-shadow: 0 .5rem 1.1rem rgba(16, 24, 40, .05);
-            height: 100%
-        }
-
-        .testimonial-avatar {
-            width: 56px;
-            height: 56px;
-            border-radius: 50%;
-            object-fit: cover;
-            margin-right: 1rem
-        }
-
-        .check {
-            color: var(--success)
-        }
-
-        .xmark {
-            color: #e03131
-        }
-
-        .cta-banner {
-            background: var(--qr-secondary);
-            color: #fff;
-            padding: 4.5rem 0
-        }
-
-        footer {
-            background: #0b0d12;
-            color: #adb5bd;
-            padding: 3rem 0
-        }
-
-        footer a {
-            color: #fff;
-            text-decoration: none
-        }
-
-        footer a:hover {
-            text-decoration: underline
-        }
-
-        /* ---------- Reveal Animations ---------- */
-        .reveal {
-            opacity: 0;
-            transform: translateY(24px);
-            transition: opacity .6s ease, transform .6s ease
-        }
-
-        .reveal.is-visible {
-            opacity: 1;
-            transform: none
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-            .reveal {
-                opacity: 1;
-                transform: none
-            }
-
-            .feature-card,
-            .price-card {
-                transition: none
-            }
-        }
-
-        /* ---------- Mobile sticky CTA ---------- */
-        .mobile-cta {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            z-index: 1050;
-            background: var(--surface);
-            border-top: 1px solid var(--border);
-            padding: .75rem .9rem;
-            display: none;
-            gap: .5rem;
-            align-items: center;
-            justify-content: space-between
-        }
-
-        .mobile-cta .btn {
-            flex: 1
-        }
-
-        @media (max-width: 991.98px) {
-            .mobile-cta {
-                display: flex
-            }
-        }
-    </style>
+    /* Small helper */
+    .section-divider{height:1px;background:linear-gradient(90deg,transparent,var(--border),transparent)}
+    .mobile-cta{
+      position:fixed; left:0; right:0; bottom:0; z-index:1050;
+      display:none; gap:.7rem; align-items:center; justify-content:space-between;
+      padding:.7rem .9rem; background:var(--surface); border-top:1px solid var(--border);
+      box-shadow:0 -8px 24px rgba(0,0,0,.08);
+    }
+    @media (max-width: 991.98px){ .mobile-cta{ display:flex } }
+  </style>
 </head>
 
-<body data-bs-spy="scroll" data-bs-target="#navMenu" data-bs-smooth-scroll="true" tabindex="0">
+<body>
 
-    <!-- ===== NAVBAR (fixed, transparent) ===== -->
-    <nav class="navbar navbar-expand-lg navbar-dark sticky-nav">
-        <div class="container">
-            <a class="navbar-brand d-flex align-items-center gap-2" href="#" aria-label="QRivo accueil">
-                <!-- Height only, no width -->
-                <img src="{{ asset('assets/img/logo/accountLogo.png') }}" alt="QRivo Logo" height="110">
-            </a>
+  <!-- ===== NAVBAR (sticky, animated underline, progress bar, offcanvas mobile) ===== -->
+  <nav class="navbar navbar-expand-lg" id="siteNav" aria-label="Navigation principale">
+    <div id="scrollProgress" aria-hidden="true"></div>
+    <div class="container">
+      <a class="navbar-brand d-flex align-items-center gap-2" href="#" aria-label="QRivo accueil">
+        <img src="{{ asset('assets/img/logo/accountLogo.png') }}" alt="QRivo" height="40">
+        <strong>QRivo</strong>
+      </a>
 
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu"
-                aria-label="Ouvrir le menu">
-                <span class="navbar-toggler-icon"></span>
-            </button>
+      <!-- Desktop links + animated indicator -->
+      <div class="nav-group d-none d-lg-flex align-items-center ms-auto">
+        <ul class="navbar-nav align-items-lg-center gap-1">
+          <li class="nav-item"><a class="nav-link" href="#features">Fonctionnalités</a></li>
+          <li class="nav-item"><a class="nav-link" href="#showcase">Produit</a></li>
+          <li class="nav-item"><a class="nav-link" href="#pricing">Tarifs</a></li>
+          <li class="nav-item"><a class="nav-link" href="#faq">FAQ</a></li>
+          <li class="nav-item ms-1"><a href="/login" class="btn btn-outline-primary">Se connecter</a></li>
+          <li class="nav-item ms-1"><a href="/register" class="btn btn-primary">Essai gratuit</a></li>
+        </ul>
+        <div class="nav-indicator" id="navIndicator"></div>
+      </div>
 
-            <div class="collapse navbar-collapse" id="navMenu">
-                <ul class="navbar-nav ms-auto mb-2 mb-lg-0 align-items-lg-center">
-                    <li class="nav-item"><a class="nav-link" href="#features">Fonctionnalités</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#how">Comment ça marche</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#pricing">Tarifs</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#testimonials">Avis</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#faq">FAQ</a></li>
-                    <li class="nav-item"><a class="nav-link" href="/login">Se connecter</a></li>
-
-                    <!-- Language Switcher -->
-                    <li class="nav-item dropdown ms-lg-2 my-2 my-lg-0">
-                        <a class="nav-link dropdown-toggle" href="#" id="langDropdown" role="button"
-                            data-bs-toggle="dropdown" aria-expanded="false" aria-label="Changer de langue">FR</a>
-                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="langDropdown">
-                            <li><a class="dropdown-item" href="/?lang=fr">Français (FR)</a></li>
-                            <li><a class="dropdown-item" href="/?lang=ar">العربية (AR)</a></li>
-                        </ul>
-                    </li>
-                </ul>
-
-                <a href="#cta" class="btn brand-cta brand-cta--dark ms-lg-3">Essai gratuit</a>
-            </div>
-        </div>
-    </nav>
-
-    <!-- ===== HERO ===== -->
-    <header class="hero">
-        <div class="container position-relative">
-            <div class="row align-items-center g-5">
-                <div class="col-lg-6 text-center text-lg-start">
-                    <span class="badge-soft mb-3 d-inline-flex align-items-center gap-2">
-                        <i class="bi bi-lightning-charge-fill"></i> Menu QR prêt en 2 minutes
-                    </span>
-                    <h1 class="display-5 mb-3">
-                        Modernisez votre carte <span class="highlight">sans impression</span>
-                    </h1>
-                    <p class="lead mb-4">Mettez à jour plats, photos et prix en temps réel. Multilingue, QR
-                        personnalisés, statistiques — tout pour convertir plus de clients.</p>
-                    <div class="d-flex flex-wrap gap-2">
-                        <a href="/register" class="btn btn-light btn-lg">Démarrer l’essai gratuit</a>
-                        <a href="#features" class="btn btn-outline-light btn-lg">Voir les fonctionnalités</a>
-                    </div>
-                    <div class="d-flex gap-4 mt-4 flex-wrap">
-                        <div><strong>14j</strong> d’essai • <span class="opacity-75">Sans CB</span></div>
-                        <div><i class="bi bi-shield-check"></i> <span class="opacity-75">Sauvegardes quotidiennes</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-lg-6 text-center">
-                    <img src="{{ asset('assets/img/saas/hero3.png') }}" alt="Aperçu du menu QR sur smartphone"
-                        class="hero-img" width="680" height="460" fetchpriority="high" decoding="async">
-                </div>
-            </div>
-
-            <!-- Trust bar -->
-            <div class="mt-5 pt-3">
-                <div class="text-center text-white-50 mb-2">Utilisé par des cafés, restaurants et hôtels</div>
-                <div class="trust-logos d-flex flex-wrap justify-content-center align-items-center">
-                    <img src="{{ asset('assets/img/clients/cafe-atlas.jpg') }}" alt="Café Atlas" loading="lazy">
-                    <img src="{{ asset('assets/img/clients/pizzeria-napoli.jpg') }}" alt="Pizzeria Napoli"
-                        loading="lazy">
-                    <img src="{{ asset('assets/img/clients/hotel-oasis.jpg') }}" alt="Hotel Oasis" loading="lazy">
-                    <img src="{{ asset('assets/img/clients/bakery-mariem.jpg') }}" alt="Boulangerie Mariem"
-                        loading="lazy">
-                    <img src="{{ asset('assets/img/clients/restaurant-cedre.jpg') }}" alt="Restaurant Cèdre"
-                        loading="lazy">
-                    <img src="{{ asset('assets/img/clients/cafe-zen.jpg') }}" alt="Café Zen" loading="lazy">
-                </div>
-            </div>
-        </div>
-    </header>
-
-    <!-- Stats -->
-    <section class="py-4" style="background:var(--surface)">
-        <div class="container">
-            <div class="row text-center g-4">
-                <div class="col-6 col-md-3">
-                    <div class="h2 mb-1">+120</div>
-                    <div class="text-muted small">établissements</div>
-                </div>
-                <div class="col-6 col-md-3">
-                    <div class="h2 mb-1">&lt;1s</div>
-                    <div class="text-muted small">chargement moyen</div>
-                </div>
-                <div class="col-6 col-md-3">
-                    <div class="h2 mb-1">+18%</div>
-                    <div class="text-muted small">ventes de desserts*</div>
-                </div>
-                <div class="col-6 col-md-3">
-                    <div class="h2 mb-1">90%</div>
-                    <div class="text-muted small">coûts d’impression en moins</div>
-                </div>
-            </div>
-            <div class="section-divider my-4"></div>
-        </div>
-    </section>
-
-    <!-- ===== FEATURES ===== -->
-    <section id="features" class="py-5">
-        <div class="container">
-            <div class="text-center">
-                <h2 class="section-title fw-bold">Pensé pour vos clients et votre équipe</h2>
-                <p class="section-sub">Des outils simples, rapides et élégants pour présenter votre carte comme un pro.
-                </p>
-            </div>
-            <div class="row g-4 reveal">
-                <div class="col-md-4">
-                    <div class="feature-card">
-                        <div class="feature-icon"><i class="bi bi-pencil-square"></i></div>
-                        <h5 class="fw-semibold mb-2">Mises à jour instantanées</h5>
-                        <p class="small mb-0">Ajoutez ou modifiez vos plats à tout moment depuis un tableau de bord
-                            intuitif.</p>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="feature-card">
-                        <div class="feature-icon"><i class="bi bi-translate"></i></div>
-                        <h5 class="fw-semibold mb-2">Multilingue &amp; devises</h5>
-                        <p class="small mb-0">Proposez le même menu en plusieurs langues et devises pour accueillir
-                            chaque client comme un local.</p>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="feature-card">
-                        <div class="feature-icon"><i class="bi bi-images"></i></div>
-                        <h5 class="fw-semibold mb-2">Photos &amp; allergènes</h5>
-                        <p class="small mb-0">Des visuels haute résolution et des allergènes clairs pour une
-                            transparence totale.</p>
-                    </div>
-                </div>
-
-                <div class="col-md-4">
-                    <div class="feature-card">
-                        <div class="feature-icon"><i class="bi bi-graph-up-arrow"></i></div>
-                        <h5 class="fw-semibold mb-2">Statistiques en temps réel</h5>
-                        <p class="small mb-0">Identifiez les plats les plus consultés pour optimiser votre offre et vos
-                            marges.</p>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="feature-card">
-                        <div class="feature-icon"><i class="bi bi-whatsapp"></i></div>
-                        <h5 class="fw-semibold mb-2">Partage WhatsApp</h5>
-                        <p class="small mb-0">Permettez à vos clients de partager votre menu en un clic.</p>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="feature-card">
-                        <div class="feature-icon"><i class="bi bi-shield-check"></i></div>
-                        <h5 class="fw-semibold mb-2">Sécurisé &amp; conforme</h5>
-                        <p class="small mb-0">Hébergement certifié, sauvegardes quotidiennes et conformité RGPD.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- ===== HOW IT WORKS ===== -->
-    <section id="how" class="py-5 soft-bg">
-        <div class="container">
-            <div class="text-center">
-                <h2 class="section-title fw-bold">Comment ça marche&nbsp;?</h2>
-                <p class="section-sub">De l’inscription à l’impression de votre QR, tout est guidé et rapide.</p>
-            </div>
-            <div class="row text-center g-4 reveal">
-                <div class="col-md-3">
-                    <div class="step">
-                        <div class="num">1</div>
-                        <h6 class="fw-semibold mb-1">Créez</h6>
-                        <p class="small mb-0">Ajoutez catégories, plats & descriptions en ligne.</p>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="step">
-                        <div class="num">2</div>
-                        <h6 class="fw-semibold mb-1">Générez</h6>
-                        <p class="small mb-0">Téléchargez votre QR avec logo & couleurs.</p>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="step">
-                        <div class="num">3</div>
-                        <h6 class="fw-semibold mb-1">Affichez</h6>
-                        <p class="small mb-0">Apposez-le sur tables, stickers ou chevalets.</p>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="step">
-                        <div class="num">4</div>
-                        <h6 class="fw-semibold mb-1">Mettez à jour</h6>
-                        <p class="small mb-0">Modifiez vos plats — le QR reste identique.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- ===== PRICING ===== -->
-    <section id="pricing" class="py-5">
-        <div class="container">
-            <div class="text-center">
-                <h2 class="section-title fw-bold">Tarification simple et flexible</h2>
-                <p class="section-sub">Commencez gratuitement. Passez à la vitesse supérieure quand vous le souhaitez.
-                </p>
-            </div>
-            <div class="d-flex justify-content-center align-items-center mb-4" aria-live="polite">
-                <span class="me-2 fw-semibold">Mensuel</span>
-                <input class="form-check-input" type="checkbox" id="billingToggle"
-                    aria-label="Basculer la période de facturation">
-                <span class="ms-2 fw-semibold">Annuel <span class="text-success">(–15%)</span></span>
-            </div>
-
-            <div class="row justify-content-center g-4 reveal">
-                <div class="col-md-4">
-                    <div class="card price-card h-100">
-                        <div class="card-body text-center p-4">
-                            <h5 class="fw-bold">Gratuit</h5>
-                            <p class="display-6 fw-bold my-3"><span class="price" data-monthly="0"
-                                    data-yearly="0">0</span> DH</p>
-                            <p class="small mb-2">Parfait si vous avez une petite carte</p>
-                            <ul class="list-unstyled mb-4 small d-inline-block text-start">
-                                <li><i class="bi bi-check2 text-success"></i> Jusqu’à <strong>10 plats</strong></li>
-                                <li><i class="bi bi-check2 text-success"></i> QR noir & blanc</li>
-                                <li><i class="bi bi-check2 text-success"></i> Statistiques basiques</li>
-                                <li><i class="bi bi-x-lg text-danger"></i> Branding QRivo visible</li>
-                            </ul>
-                            <a href="#cta" class="btn btn-outline-primary w-100">Commencer</a>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="card price-card featured h-100 position-relative">
-                        <div class="card-body text-center p-4">
-                            <span class="price-badge position-absolute top-0 end-0 mt-3 me-3">Populaire</span>
-                            <h5 class="fw-bold">Starter</h5>
-                            <p class="display-6 fw-bold my-3">
-                                <span class="price" data-monthly="69" data-yearly="59">69</span> DH
-                                <span class="fs-6 fw-normal billing-label">/mois</span>
-                            </p>
-                            <p class="small mb-2">1 menu complet, items illimités</p>
-                            <ul class="list-unstyled mb-4 small d-inline-block text-start">
-                                <li><i class="bi bi-check2 text-success"></i> 1 menu (items illimités)</li>
-                                <li><i class="bi bi-check2 text-success"></i> QR en couleurs</li>
-                                <li><i class="bi bi-check2 text-success"></i> Multilingue & devises</li>
-                                <li><i class="bi bi-check2 text-success"></i> Statistiques détaillées</li>
-                                <li><i class="bi bi-check2 text-success"></i> Sans branding QRivo</li>
-                            </ul>
-                            <a href="/register" class="btn btn-primary w-100">Essai gratuit 14 j</a>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="card price-card h-100">
-                        <div class="card-body text-center p-4">
-                            <h5 class="fw-bold">Pro</h5>
-                            <p class="display-6 fw-bold my-3">
-                                <span class="price" data-monthly="149" data-yearly="127">149</span> DH
-                                <span class="fs-6 fw-normal billing-label">/mois</span>
-                            </p>
-                            <p class="small mb-2">Pour plusieurs menus et équipes</p>
-                            <ul class="list-unstyled mb-4 small d-inline-block text-start">
-                                <li><i class="bi bi-check2 text-success"></i> Menus illimités</li>
-                                <li><i class="bi bi-check2 text-success"></i> QR personnalisés</li>
-                                <li><i class="bi bi-check2 text-success"></i> Intégrations WhatsApp & Instagram</li>
-                                <li><i class="bi bi-check2 text-success"></i> Accès API / export</li>
-                                <li><i class="bi bi-check2 text-success"></i> Support prioritaire</li>
-                            </ul>
-                            <a href="/register" class="btn btn-outline-primary w-100">Essai gratuit 14 j</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <p class="text-center mt-3 small text-muted">Réduction appliquée en annuel. *Exemple client typique,
-                résultats variables.</p>
-        </div>
-    </section>
-
-    <!-- ===== COMPARISON ===== -->
-    <section class="py-5 soft-bg">
-        <div class="container reveal">
-            <div class="text-center">
-                <h2 class="section-title fw-bold">Pourquoi passer au menu digital&nbsp;?</h2>
-                <p class="section-sub">Comparez QRivo aux impressions papier traditionnelles.</p>
-            </div>
-            <div class="row g-4">
-                <div class="col-lg-6">
-                    <div class="card h-100 price-card p-3">
-                        <div class="card-body">
-                            <h5 class="fw-bold mb-3"><i class="bi bi-qr-code-scan me-2 text-success"></i> QRivo</h5>
-                            <ul class="list-unstyled small mb-0">
-                                <li class="mb-2"><i class="bi bi-check2-circle check me-2"></i>Mises à jour
-                                    illimitées & instantanées</li>
-                                <li class="mb-2"><i class="bi bi-check2-circle check me-2"></i>Multilingue et photos
-                                    HD</li>
-                                <li class="mb-2"><i class="bi bi-check2-circle check me-2"></i>Statistiques &
-                                    optimisation des ventes</li>
-                                <li class="mb-2"><i class="bi bi-check2-circle check me-2"></i>QR personnalisés avec
-                                    votre branding</li>
-                                <li class="mb-2"><i class="bi bi-check2-circle check me-2"></i>Coûts maîtrisés (sans
-                                    réimpressions)</li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-lg-6">
-                    <div class="card h-100 price-card p-3">
-                        <div class="card-body">
-                            <h5 class="fw-bold mb-3"><i class="bi bi-file-earmark-text me-2 text-danger"></i> Menu
-                                papier</h5>
-                            <ul class="list-unstyled small mb-0">
-                                <li class="mb-2"><i class="bi bi-x-circle xmark me-2"></i>Réimpression à chaque
-                                    changement</li>
-                                <li class="mb-2"><i class="bi bi-x-circle xmark me-2"></i>Pas de statistiques
-                                    d’usage</li>
-                                <li class="mb-2"><i class="bi bi-x-circle xmark me-2"></i>Traductions coûteuses et
-                                    lentes</li>
-                                <li class="mb-2"><i class="bi bi-x-circle xmark me-2"></i>Pas d’images interactives
-                                </li>
-                                <li class="mb-2"><i class="bi bi-x-circle xmark me-2"></i>Coût récurrent élevé</li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- ===== TESTIMONIALS ===== -->
-    <section id="testimonials" class="py-5">
-        <div class="container">
-            <div class="text-center">
-                <h2 class="section-title fw-bold">Ils nous font confiance</h2>
-                <p class="section-sub">Des résultats concrets dès les premières semaines.</p>
-            </div>
-            <div class="row g-4 reveal">
-                <div class="col-md-4">
-                    <div class="testimonial-card d-flex flex-column h-100">
-                        <div class="d-flex align-items-center mb-3">
-                            <img src="{{ asset('assets/img/avatars/avatar1.jpg') }}" alt="Portrait client Amine"
-                                class="testimonial-avatar" width="56" height="56" loading="lazy">
-                            <div>
-                                <h6 class="mb-0 fw-semibold">Amine B.</h6><small class="text-muted">Propriétaire —
-                                    Café Atlas</small>
-                            </div>
-                        </div>
-                        <p class="mb-0 small">« Depuis QRivo, nos clients trouvent tout de suite ce qu’ils veulent et
-                            nous avons réduit les impressions de 90&nbsp;%. »</p>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="testimonial-card d-flex flex-column h-100">
-                        <div class="d-flex align-items-center mb-3">
-                            <img src="{{ asset('assets/img/avatars/avatar2.jpg') }}" alt="Portrait client Salma"
-                                class="testimonial-avatar" width="56" height="56" loading="lazy">
-                            <div>
-                                <h6 class="mb-0 fw-semibold">Salma R.</h6><small class="text-muted">Manager — Pizzeria
-                                    Napoli</small>
-                            </div>
-                        </div>
-                        <p class="mb-0 small">« Le multilingue a changé la donne avec les touristes. Les desserts se
-                            vendent mieux grâce aux photos. »</p>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="testimonial-card d-flex flex-column h-100">
-                        <div class="d-flex align-items-center mb-3">
-                            <img src="{{ asset('assets/img/avatars/avatar3.jpg') }}" alt="Portrait client Youssef"
-                                class="testimonial-avatar" width="56" height="56" loading="lazy">
-                            <div>
-                                <h6 class="mb-0 fw-semibold">Youssef K.</h6><small class="text-muted">Directeur —
-                                    Hotel Oasis</small>
-                            </div>
-                        </div>
-                        <p class="mb-0 small">« Les stats nous aident à choisir quoi mettre en avant. La mise à jour
-                            est instantanée pour nos trois restaurants. »</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- ===== FAQ ===== -->
-    <section id="faq" class="py-5 soft-bg">
-        <div class="container">
-            <div class="text-center">
-                <h2 class="section-title fw-bold">Questions fréquentes</h2>
-                <p class="section-sub">Tout ce qu’il faut savoir avant de démarrer.</p>
-            </div>
-            <div class="accordion accordion-flush reveal" id="faqAccordion">
-                <div class="accordion-item">
-                    <h2 class="accordion-header" id="faq1">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                            data-bs-target="#faqCollapse1">Comment fonctionne la période d’essai&nbsp;?</button>
-                    </h2>
-                    <div id="faqCollapse1" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-                        <div class="accordion-body small">Vous profitez de toutes les fonctionnalités Starter pendant
-                            14 jours, sans carte bancaire. Si vous ne passez pas à une formule payante, votre compte
-                            basculera automatiquement sur l’offre gratuite.</div>
-                    </div>
-                </div>
-                <div class="accordion-item">
-                    <h2 class="accordion-header" id="faq2">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                            data-bs-target="#faqCollapse2">Puis-je changer de formule à tout moment&nbsp;?</button>
-                    </h2>
-                    <div id="faqCollapse2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-                        <div class="accordion-body small">Oui. Vous pouvez passer d’une formule à l’autre en un clic
-                            depuis votre tableau de bord. Le prorata est calculé automatiquement.</div>
-                    </div>
-                </div>
-                <div class="accordion-item">
-                    <h2 class="accordion-header" id="faq3">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                            data-bs-target="#faqCollapse3">Dois-je réimprimer mon QR code si je change un
-                            plat&nbsp;?</button>
-                    </h2>
-                    <div id="faqCollapse3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-                        <div class="accordion-body small">Non. Le QR code pointe vers un lien dynamique. Toute
-                            modification dans votre tableau de bord est reflétée instantanément pour vos clients.</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- ===== CTA ===== -->
-    <section id="cta" class="cta-banner text-center">
-        <div class="container">
-            <h2 class="fw-bold mb-3">Prêt à moderniser votre carte&nbsp;?</h2>
-            <p class="mb-4">Créez gratuitement votre premier menu QR et impressionnez vos clients dès aujourd’hui.
-            </p>
-            <a href="/register" class="btn btn-light btn-lg">Créer mon compte</a>
-            <div class="mt-3 small text-white-50">Besoin d’une démo guidée&nbsp;? <a href="/contact"
-                    class="link-light text-decoration-underline">Contactez-nous</a></div>
-        </div>
-    </section>
-
-    <!-- ===== FOOTER ===== -->
-    <footer>
-        <div class="container">
-            <div class="row gy-4 align-items-center">
-                <div class="col-md-6 text-md-start text-center">
-                    <span class="fw-semibold text-white fs-5">QRivo</span>
-                    <p class="small mb-0 mt-2">&copy; 2025 QRivo Inc. Tous droits réservés.</p>
-                </div>
-                <div class="col-md-6">
-                    <ul class="list-inline mb-0 text-md-end text-center small">
-                        <li class="list-inline-item"><a href="#features">Fonctionnalités</a></li>
-                        <li class="list-inline-item"><a href="#pricing">Tarifs</a></li>
-                        <li class="list-inline-item"><a href="#testimonials">Avis</a></li>
-                        <li class="list-inline-item"><a href="#faq">FAQ</a></li>
-                        <li class="list-inline-item"><a href="/terms">CGU</a></li>
-                        <li class="list-inline-item"><a href="/contact">Contact</a></li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-    </footer>
-
-    <!-- Mobile sticky CTA -->
-    <div class="mobile-cta">
-        <div class="d-flex align-items-center gap-2">
-            <i class="bi bi-qr-code-scan"></i>
-            <span class="small">Essayez QRivo gratuitement</span>
-        </div>
-        <a href="/register" class="btn btn-primary btn-sm">Créer mon compte</a>
+      <!-- Mobile toggler -->
+      <button class="navbar-toggler d-lg-none ms-auto" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNav" aria-label="Ouvrir le menu">
+        <span class="navbar-toggler-icon"></span>
+      </button>
     </div>
+  </nav>
 
-    <!-- ===== SCRIPTS ===== -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" defer></script>
-    <script>
-        /* Measure nav height -> set hero offset for tall logo */
-        const nav = document.querySelector('.sticky-nav');
+  <!-- Offcanvas mobile menu -->
+  <div class="offcanvas offcanvas-end offcanvas-nav" tabindex="-1" id="offcanvasNav" aria-labelledby="offcanvasNavLabel">
+    <div class="offcanvas-header">
+      <div class="d-flex align-items-center gap-2">
+        <img src="{{ asset('assets/img/logo/accountLogo.png') }}" alt="QRivo" height="28">
+        <strong id="offcanvasNavLabel">QRivo</strong>
+      </div>
+      <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Fermer"></button>
+    </div>
+    <div class="offcanvas-body">
+      <div class="list-group list-group-flush">
+        <a class="list-group-item" href="#features" data-close>Fonctionnalités</a>
+        <a class="list-group-item" href="#showcase" data-close>Produit</a>
+        <a class="list-group-item" href="#pricing" data-close>Tarifs</a>
+        <a class="list-group-item" href="#faq" data-close>FAQ</a>
+      </div>
+      <div class="d-grid gap-2 mt-3">
+        <a href="/login" class="btn btn-outline-primary">Se connecter</a>
+        <a href="/register" class="btn btn-primary">Essai gratuit</a>
+      </div>
+    </div>
+  </div>
 
-        function setNavOffset() {
-            if (nav) {
-                const h = nav.offsetHeight || 140;
-                document.documentElement.style.setProperty('--nav-offset', h + 'px');
-            }
-        }
-        window.addEventListener('load', setNavOffset);
-        window.addEventListener('resize', setNavOffset);
+  <!-- ===== HERO ===== -->
+  <header id="overview" class="hero">
+    <div class="container">
+      <div class="row align-items-center g-5">
+        <div class="col-lg-6">
+          <span class="badge-soft d-inline-flex align-items-center gap-2 mb-3">
+            <i class="bi bi-lightning-charge-fill"></i> Menu QR prêt en 2 minutes
+          </span>
+          <h1 class="display-5 mb-3">Le <span class="spark">menu digital</span> qui convertit plus de clients</h1>
+          <p class="lead text-muted mb-4">Mettez à jour photos et prix en temps réel, créez des QR personnalisés, traduisez en un clic et suivez vos performances.</p>
+          <div class="d-flex flex-wrap gap-2">
+            <a href="/register" class="btn btn-primary btn-lg">Démarrer l’essai</a>
+            <a href="#showcase" class="btn btn-outline-primary btn-lg">Voir le produit</a>
+          </div>
+          <div class="d-flex gap-4 mt-4 flex-wrap text-muted small">
+            <div><strong>14j</strong> d’essai • Sans CB</div>
+            <div><i class="bi bi-shield-check"></i> Sauvegardes quotidiennes</div>
+          </div>
+        </div>
+        <div class="col-lg-6">
+          <div class="phone" aria-label="Aperçu du menu sur smartphone">
+            <div class="screen">
+              <img id="demoScreen" src="{{ asset('assets/img/saas/demo-1.jpg') }}" alt="Aperçu du menu" width="320" height="640" fetchpriority="high" decoding="async">
+            </div>
+          </div>
+          <div class="text-center small text-muted mt-2">Aperçu dynamique (images défilantes)</div>
+        </div>
+      </div>
 
-        /* Switch nav text (dark/light) while staying transparent */
-        const heroEl = document.querySelector('.hero');
-        const ctaBtn = document.querySelector('.brand-cta');
+      <!-- Trust bar -->
+      <div class="mt-5 pt-3">
+        <div class="text-center text-muted mb-2">Utilisé par des cafés, restaurants et hôtels</div>
+        <div class="d-flex flex-wrap justify-content-center align-items-center gap-3">
+          <img src="{{ asset('assets/img/clients/cafe-atlas.jpg') }}" alt="Café Atlas" style="height:44px;border-radius:10px;border:1px solid var(--border);box-shadow:0 .35rem .9rem rgba(0,0,0,.06);background:#fff" loading="lazy">
+          <img src="{{ asset('assets/img/clients/pizzeria-napoli.jpg') }}" alt="Pizzeria Napoli" style="height:44px;border-radius:10px;border:1px solid var(--border);box-shadow:0 .35rem .9rem rgba(0,0,0,.06);background:#fff" loading="lazy">
+          <img src="{{ asset('assets/img/clients/hotel-oasis.jpg') }}" alt="Hotel Oasis" style="height:44px;border-radius:10px;border:1px solid var(--border);box-shadow:0 .35rem .9rem rgba(0,0,0,.06);background:#fff" loading="lazy">
+          <img src="{{ asset('assets/img/clients/bakery-mariem.jpg') }}" alt="Boulangerie Mariem" style="height:44px;border-radius:10px;border:1px solid var(--border);box-shadow:0 .35rem .9rem rgba(0,0,0,.06);background:#fff" loading="lazy">
+          <img src="{{ asset('assets/img/clients/restaurant-cedre.jpg') }}" alt="Restaurant Cèdre" style="height:44px;border-radius:10px;border:1px solid var(--border);box-shadow:0 .35rem .9rem rgba(0,0,0,.06);background:#fff" loading="lazy">
+          <img src="{{ asset('assets/img/clients/cafe-zen.jpg') }}" alt="Café Zen" style="height:44px;border-radius:10px;border:1px solid var(--border);box-shadow:0 .35rem .9rem rgba(0,0,0,.06);background:#fff" loading="lazy">
+        </div>
+      </div>
+    </div>
+  </header>
 
-        function setNavScheme() {
-            const swapAt = Math.max(0, (heroEl?.offsetHeight || 300) - (nav?.offsetHeight || 0) - 20);
-            const light = window.scrollY >= swapAt; // when we leave hero area
-            if (light) {
-                nav.classList.remove('navbar-dark');
-                nav.classList.add('navbar-light');
-                ctaBtn?.classList.remove('brand-cta--dark');
-                ctaBtn?.classList.add('brand-cta--light');
-            } else {
-                nav.classList.add('navbar-dark');
-                nav.classList.remove('navbar-light');
-                ctaBtn?.classList.add('brand-cta--dark');
-                ctaBtn?.classList.remove('brand-cta--light');
-            }
-        }
-        window.addEventListener('scroll', setNavScheme);
-        window.addEventListener('load', setNavScheme);
+  <!-- ===== METRICS ===== -->
+  <section class="py-4" style="background:var(--surface)">
+    <div class="container">
+      <div class="row text-center g-4">
+        <div class="col-6 col-md-3"><div class="h2 mb-1">+120</div><div class="text-muted small">établissements</div></div>
+        <div class="col-6 col-md-3"><div class="h2 mb-1">&lt;1s</div><div class="text-muted small">chargement moyen</div></div>
+        <div class="col-6 col-md-3"><div class="h2 mb-1">+18%</div><div class="text-muted small">ventes de desserts*</div></div>
+        <div class="col-6 col-md-3"><div class="h2 mb-1">90%</div><div class="text-muted small">coûts d’impression en moins</div></div>
+      </div>
+      <div class="section-divider my-4"></div>
+    </div>
+  </section>
 
-        /* Pricing toggle */
-        const toggle = document.getElementById('billingToggle');
-        const priceEls = document.querySelectorAll('.price');
-        const billingLabels = document.querySelectorAll('.billing-label');
+  <!-- ===== FEATURES ===== -->
+  <section id="features" class="py-5">
+    <div class="container">
+      <div class="text-center">
+        <h2 class="section-title">Conçu pour vos clients et votre équipe</h2>
+        <p class="section-sub">Une carte claire, belle et toujours à jour.</p>
+      </div>
+      <div class="row g-4">
+        <div class="col-md-6 col-lg-3">
+          <div class="feature">
+            <div class="icon"><i class="bi bi-pencil-square"></i></div>
+            <h6 class="fw-bold">Éditeur ultra simple</h6>
+            <p class="small text-muted mb-0">Ajoutez plats, prix, photos, variations et allergènes en quelques clics.</p>
+          </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+          <div class="feature">
+            <div class="icon"><i class="bi bi-qr-code"></i></div>
+            <h6 class="fw-bold">QR personnalisés</h6>
+            <p class="small text-muted mb-0">Logo, couleurs, formats table, sticker ou chevalet, export SVG/PNG.</p>
+          </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+          <div class="feature">
+            <div class="icon"><i class="bi bi-translate"></i></div>
+            <h6 class="fw-bold">Multilingue & devises</h6>
+            <p class="small text-muted mb-0">FR/AR/EN, gestion RTL et prix par devise.</p>
+          </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+          <div class="feature">
+            <div class="icon"><i class="bi bi-graph-up-arrow"></i></div>
+            <h6 class="fw-bold">Statistiques en direct</h6>
+            <p class="small text-muted mb-0">Identifiez les plats clés et optimisez vos marges.</p>
+          </div>
+        </div>
+      </div>
 
-        function updatePrices() {
-            priceEls.forEach(el => {
-                const monthly = el.dataset.monthly,
-                    yearly = el.dataset.yearly;
-                el.textContent = (toggle && toggle.checked) ? yearly : monthly;
-            });
-            billingLabels.forEach(l => l && (l.textContent = (toggle && toggle.checked) ? '/mois (facturé annuellement)' :
-                '/mois'));
-        }
-        toggle && toggle.addEventListener('change', updatePrices);
-        updatePrices();
+      <div class="row g-4 mt-1">
+        <div class="col-md-6 col-lg-4">
+          <div class="feature">
+            <div class="icon"><i class="bi bi-whatsapp"></i></div>
+            <h6 class="fw-bold">Partage social</h6>
+            <p class="small text-muted mb-0">WhatsApp/Instagram en un clic pour booster la visibilité.</p>
+          </div>
+        </div>
+        <div class="col-md-6 col-lg-4">
+          <div class="feature">
+            <div class="icon"><i class="bi bi-shield-check"></i></div>
+            <h6 class="fw-bold">Sécurisé & conforme</h6>
+            <p class="small text-muted mb-0">Sauvegardes quotidiennes, hébergement européen, RGPD.</p>
+          </div>
+        </div>
+        <div class="col-md-12 col-lg-4">
+          <div class="feature">
+            <div class="icon"><i class="bi bi-bag-check"></i></div>
+            <h6 class="fw-bold">Commande en salle (optionnel)</h6>
+            <p class="small text-muted mb-0">Commande depuis la table avec ticket pour la caisse.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
 
-        /* Reveal animations */
-        const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        if (!reduce) {
-            const revealEls = document.querySelectorAll('.reveal');
-            const io = new IntersectionObserver((entries) => {
-                entries.forEach(e => {
-                    if (e.isIntersecting) {
-                        e.target.classList.add('is-visible');
-                        io.unobserve(e.target);
-                    }
-                });
-            }, {
-                threshold: 0.12
-            });
-            revealEls.forEach(el => io.observe(el));
-        } else {
-            document.querySelectorAll('.reveal').forEach(el => el.classList.add('is-visible'));
-        }
+  <!-- ===== PRODUCT SHOWCASE ===== -->
+  <section id="showcase" class="py-5">
+    <div class="container">
+      <div class="row g-4 align-items-stretch">
+        <div class="col-lg-6">
+          <div class="showcase h-100">
+            <ul class="nav nav-pills gap-2 mb-3" id="prodTabs" role="tablist">
+              <li class="nav-item"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#tab-editor" type="button" role="tab">Éditeur</button></li>
+              <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-qr" type="button" role="tab">QR Designer</button></li>
+              <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-analytics" type="button" role="tab">Analytics</button></li>
+            </ul>
+            <div class="tab-content">
+              <div class="tab-pane fade show active" id="tab-editor" role="tabpanel">
+                <img src="{{ asset('assets/img/saas/editor.png') }}" alt="Éditeur du menu" class="img-fluid rounded" loading="lazy">
+              </div>
+              <div class="tab-pane fade" id="tab-qr" role="tabpanel">
+                <img src="{{ asset('assets/img/saas/qr-builder.png') }}" alt="Générateur de QR" class="img-fluid rounded" loading="lazy">
+              </div>
+              <div class="tab-pane fade" id="tab-analytics" role="tabpanel">
+                <img src="{{ asset('assets/img/saas/analytics.png') }}" alt="Statistiques" class="img-fluid rounded" loading="lazy">
+              </div>
+            </div>
+            <div class="small text-muted mt-2">Aperçus d’interface (exemples)</div>
+          </div>
+        </div>
 
-        /* Highlight current section in navbar */
-        const links = [...document.querySelectorAll('.nav-link[href^="#"]')];
-        const sections = links.map(a => document.querySelector(a.getAttribute('href'))).filter(Boolean);
+        <div class="col-lg-6">
+          <div class="showcase h-100">
+            <h5 class="mb-2">Le parcours en 3 étapes</h5>
+            <ol class="small text-muted mb-3">
+              <li>Créez vos catégories et plats</li>
+              <li>Personnalisez votre QR et imprimez</li>
+              <li>Suivez les performances en temps réel</li>
+            </ol>
+            <img src="{{ asset('assets/img/saas/flow-owner.png') }}" class="img-fluid rounded border" alt="Flux restaurateur" loading="lazy">
+            <div class="d-flex gap-2 mt-3">
+              <a href="/register" class="btn btn-primary">Créer mon compte</a>
+              <a href="/contact" class="btn btn-outline-primary">Demander une démo</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
 
-        function setActiveLink() {
-            let idx = 0;
-            const fromTop = window.scrollY + 140;
-            sections.forEach((sec, i) => {
-                if (sec.offsetTop <= fromTop) idx = i;
-            });
-            links.forEach(l => l.classList.remove('active'));
-            links[idx]?.classList.add('active');
-        }
-        window.addEventListener('scroll', setActiveLink);
-        window.addEventListener('load', setActiveLink);
-    </script>
+  <!-- ===== PRICING ===== -->
+  <section id="pricing" class="py-5">
+    <div class="container">
+      <div class="text-center">
+        <h2 class="section-title">Tarification simple et flexible</h2>
+        <p class="section-sub">Commencez gratuitement. Passez quand vous voulez.</p>
+        <div class="toggle mt-1" aria-live="polite">
+          <span class="seg active" id="billMonthly">Mensuel</span>
+          <span class="seg" id="billYearly">Annuel <span class="text-success">(–15%)</span></span>
+        </div>
+      </div>
+
+      <div class="row g-4 justify-content-center mt-1">
+        <div class="col-md-4">
+          <div class="price-card p-4 h-100">
+            <h6 class="fw-bold">Gratuit</h6>
+            <div class="display-6 fw-extrabold my-2"><span class="price" data-monthly="0" data-yearly="0">0</span> DH</div>
+            <p class="text-muted small">Parfait pour une petite carte</p>
+            <ul class="list-unstyled small mb-4">
+              <li><i class="bi bi-check2 text-success"></i> 10 plats</li>
+              <li><i class="bi bi-check2 text-success"></i> QR noir & blanc</li>
+              <li><i class="bi bi-check2 text-success"></i> Stats basiques</li>
+              <li><i class="bi bi-x-lg text-danger"></i> Branding QRivo visible</li>
+            </ul>
+            <a href="/register" class="btn btn-outline-primary w-100">Commencer</a>
+          </div>
+        </div>
+
+        <div class="col-md-4">
+          <div class="price-card p-4 h-100 featured position-relative">
+            <span class="price-badge position-absolute top-0 end-0 mt-3 me-3">Populaire</span>
+            <h6 class="fw-bold">Starter</h6>
+            <div class="display-6 fw-extrabold my-2">
+              <span class="price" data-monthly="69" data-yearly="59">69</span> DH
+              <span class="fs-6 fw-normal billing-label">/mois</span>
+            </div>
+            <p class="text-muted small">1 menu complet, items illimités</p>
+            <ul class="list-unstyled small mb-4">
+              <li><i class="bi bi-check2 text-success"></i> 1 menu (illimité)</li>
+              <li><i class="bi bi-check2 text-success"></i> QR en couleurs</li>
+              <li><i class="bi bi-check2 text-success"></i> Multilingue & devises</li>
+              <li><i class="bi bi-check2 text-success"></i> Statistiques détaillées</li>
+              <li><i class="bi bi-check2 text-success"></i> Sans branding QRivo</li>
+            </ul>
+            <a href="/register" class="btn btn-primary w-100">Essai gratuit 14 j</a>
+          </div>
+        </div>
+
+        <div class="col-md-4">
+          <div class="price-card p-4 h-100">
+            <h6 class="fw-bold">Pro</h6>
+            <div class="display-6 fw-extrabold my-2">
+              <span class="price" data-monthly="149" data-yearly="127">149</span> DH
+              <span class="fs-6 fw-normal billing-label">/mois</span>
+            </div>
+            <p class="text-muted small">Pour plusieurs menus et équipes</p>
+            <ul class="list-unstyled small mb-4">
+              <li><i class="bi bi-check2 text-success"></i> Menus illimités</li>
+              <li><i class="bi bi-check2 text-success"></i> QR personnalisés</li>
+              <li><i class="bi bi-check2 text-success"></i> Intégrations WhatsApp & Instagram</li>
+              <li><i class="bi bi-check2 text-success"></i> Accès API / export</li>
+              <li><i class="bi bi-check2 text-success"></i> Support prioritaire</li>
+            </ul>
+            <a href="/register" class="btn btn-outline-primary w-100">Essai gratuit 14 j</a>
+          </div>
+        </div>
+      </div>
+      <p class="text-center small text-muted mt-3">Réduction appliquée en annuel. *Exemple client typique, résultats variables.</p>
+    </div>
+  </section>
+
+  <!-- ===== FAQ ===== -->
+  <section id="faq" class="py-5" style="background:var(--surface)">
+    <div class="container">
+      <div class="text-center">
+        <h2 class="section-title">Questions fréquentes</h2>
+        <p class="section-sub">Tout ce qu’il faut savoir avant de démarrer.</p>
+      </div>
+      <div class="accordion" id="faqAccordion">
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="fq1">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fq1c">Comment fonctionne l’essai&nbsp;?</button>
+          </h2>
+          <div id="fq1c" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+            <div class="accordion-body small">Essai de 14 jours sur Starter, sans carte bancaire. Sans action de votre part, vous passez en offre gratuite.</div>
+          </div>
+        </div>
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="fq2">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fq2c">Puis-je changer de formule&nbsp;?</button>
+          </h2>
+          <div id="fq2c" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+            <div class="accordion-body small">Oui, à tout moment depuis le tableau de bord. Le prorata est calculé automatiquement.</div>
+          </div>
+        </div>
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="fq3">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fq3c">Dois-je réimprimer si je change un plat&nbsp;?</button>
+          </h2>
+          <div id="fq3c" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+            <div class="accordion-body small">Non, le QR pointe vers un lien dynamique. Vos modifications sont instantanées côté client.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== CTA ===== -->
+  <section class="cta text-center">
+    <div class="container">
+      <h2 class="fw-bold mb-2">Prêt à moderniser votre carte&nbsp;?</h2>
+      <p class="mb-4">Créez votre premier menu QR en quelques minutes.</p>
+      <div class="d-flex gap-2 justify-content-center">
+        <a href="/register" class="btn btn-light btn-lg">Créer mon compte</a>
+        <a href="/contact" class="btn btn-outline-primary btn-lg">Parler à un expert</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== FOOTER (kept as-is from last version) ===== -->
+  <footer class="site-footer pt-5">
+    <div class="container pb-4">
+      <div class="row g-4">
+        <!-- Brand + short -->
+        <div class="col-lg-4">
+          <div class="footer-card h-100">
+            <div class="footer-brand mb-2">
+              <img src="{{ asset('assets/img/logo/accountLogo.png') }}" alt="QRivo">
+              <strong>QRivo</strong>
+            </div>
+            <p class="small text-muted mb-3">
+              Le menu digital moderne pour restaurants, cafés et hôtels. QR personnalisés, multilingue, stats en temps réel.
+            </p>
+            <div class="social">
+              <a href="https://instagram.com" aria-label="Instagram"><i class="bi bi-instagram"></i></a>
+              <a href="https://facebook.com" aria-label="Facebook"><i class="bi bi-facebook"></i></a>
+              <a href="https://wa.me/" aria-label="WhatsApp"><i class="bi bi-whatsapp"></i></a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Product links -->
+        <div class="col-6 col-lg-2">
+          <h6 class="fw-bold mb-3">Produit</h6>
+          <ul class="list-unstyled small m-0">
+            <li class="mb-2"><a class="footer-link" href="#features">Fonctionnalités</a></li>
+            <li class="mb-2"><a class="footer-link" href="#showcase">Aperçu</a></li>
+            <li class="mb-2"><a class="footer-link" href="#pricing">Tarifs</a></li>
+            <li class="mb-2"><a class="footer-link" href="#faq">FAQ</a></li>
+          </ul>
+        </div>
+
+        <!-- Resources links -->
+        <div class="col-6 col-lg-3">
+          <h6 class="fw-bold mb-3">Ressources</h6>
+          <ul class="list-unstyled small m-0">
+            <li class="mb-2"><a class="footer-link" href="/contact">Contact</a></li>
+            <li class="mb-2"><a class="footer-link" href="/terms">CGU</a></li>
+            <li class="mb-2"><a class="footer-link" href="/login">Se connecter</a></li>
+            <li class="mb-2"><a class="footer-link" href="/register">Créer un compte</a></li>
+          </ul>
+        </div>
+
+        <!-- Newsletter -->
+        <div class="col-lg-3">
+          <h6 class="fw-bold mb-3">Newsletter</h6>
+          <p class="small text-muted mb-2">Recevez des conseils pour optimiser votre menu digital.</p>
+          <form id="newsletterForm" class="d-flex gap-2">
+            <input type="email" required class="form-control" placeholder="Votre email">
+            <button class="btn btn-primary" type="submit">S’inscrire</button>
+          </form>
+          <div id="newsletterMsg" class="small mt-2" aria-live="polite"></div>
+        </div>
+      </div>
+
+      <hr class="my-4" style="border-color:var(--border)">
+
+      <div class="d-flex flex-column flex-md-row align-items-center justify-content-between pb-4">
+        <p class="small text-muted mb-2 mb-md-0">
+          &copy; 2025 QRivo Inc. Tous droits réservés.
+        </p>
+        <div class="d-flex align-items-center gap-3">
+          <a href="#overview" class="btn btn-outline-primary btn-sm" id="toTopBtn" aria-label="Retour en haut">
+            <i class="bi bi-arrow-up"></i> Haut de page
+          </a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Mobile sticky CTA -->
+  <div class="mobile-cta">
+    <div class="d-flex align-items-center gap-2">
+      <i class="bi bi-qr-code-scan"></i>
+      <span class="small">Essayez QRivo gratuitement</span>
+    </div>
+    <a href="/register" class="btn btn-primary btn-sm">Créer mon compte</a>
+  </div>
+
+  <!-- ========= SCRIPTS ========= -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" defer></script>
+  <script>
+    // Phone demo carousel (simple & reliable)
+    const demo = document.getElementById('demoScreen');
+    const shots = [
+      "{{ asset('assets/img/saas/demo-1.jpg') }}",
+      "{{ asset('assets/img/saas/demo-2.jpg') }}",
+      "{{ asset('assets/img/saas/demo-3.jpg') }}"
+    ];
+    let idx = 0;
+    setInterval(() => {
+      idx = (idx + 1) % shots.length;
+      if (demo) demo.src = shots[idx];
+    }, 3200);
+
+    // Pricing toggle (monthly / yearly)
+    const billMonthly = document.getElementById('billMonthly');
+    const billYearly  = document.getElementById('billYearly');
+    const priceEls    = document.querySelectorAll('.price');
+    const billingLabels = document.querySelectorAll('.billing-label');
+    function setBilling(yearly){
+      billMonthly.classList.toggle('active', !yearly);
+      billYearly.classList.toggle('active', yearly);
+      priceEls.forEach(el => el.textContent = yearly ? el.dataset.yearly : el.dataset.monthly);
+      billingLabels.forEach(l => l && (l.textContent = yearly ? '/mois (facturé annuellement)' : '/mois'));
+    }
+    billMonthly?.addEventListener('click', () => setBilling(false));
+    billYearly?.addEventListener('click',  () => setBilling(true));
+    setBilling(false);
+
+    // Navbar: shadow + shrink on scroll, scroll progress, active link + animated indicator
+    const nav = document.getElementById('siteNav');
+    const progress = document.getElementById('scrollProgress');
+    const indicator = document.getElementById('navIndicator');
+    const linkNodes = [...document.querySelectorAll('.navbar .nav-link[href^="#"]')];
+    const sections = linkNodes.map(a => document.querySelector(a.getAttribute('href'))).filter(Boolean);
+
+    function setProgress(){
+      const st = document.documentElement.scrollTop || document.body.scrollTop;
+      const h = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+      const pct = Math.max(0, Math.min(1, st / h));
+      progress.style.width = (pct * 100).toFixed(2) + '%';
+    }
+
+    function moveIndicator(el){
+      const group = document.querySelector('.nav-group');
+      if (!indicator || !group || !el) { if (indicator) indicator.style.opacity = '0'; return; }
+      const r = el.getBoundingClientRect();
+      const gp = group.getBoundingClientRect();
+      indicator.style.width = r.width + 'px';
+      indicator.style.transform = `translateX(${r.left - gp.left}px)`;
+      indicator.style.opacity = '1';
+    }
+
+    function setActiveOnScroll(){
+      if (window.scrollY > 8) nav?.classList.add('scrolled'); else nav?.classList.remove('scrolled');
+      setProgress();
+
+      // Which section is active?
+      let idx = -1;
+      const fromTop = window.scrollY + 120; // a bit below sticky nav
+      sections.forEach((sec, i) => { if (sec.offsetTop <= fromTop) idx = i; });
+      linkNodes.forEach(l => l.classList.remove('active'));
+      const active = idx >= 0 ? linkNodes[idx] : null;
+      active?.classList.add('active');
+      moveIndicator(active);
+    }
+
+    // Hover: preview indicator under hovered link (desktop)
+    linkNodes.forEach(l => {
+      l.addEventListener('mouseenter', () => moveIndicator(l));
+      l.addEventListener('mouseleave', () => {
+        const current = document.querySelector('.navbar .nav-link.active');
+        moveIndicator(current);
+      });
+      l.addEventListener('click', () => {
+        // Smooth indicator update on click
+        setTimeout(() => moveIndicator(l), 50);
+      });
+    });
+
+    window.addEventListener('scroll', setActiveOnScroll);
+    window.addEventListener('resize', () => moveIndicator(document.querySelector('.navbar .nav-link.active')));
+    window.addEventListener('load', () => {
+      setActiveOnScroll();
+      moveIndicator(document.querySelector('.navbar .nav-link.active') || linkNodes[0] || null);
+    });
+
+    // Offcanvas: close when picking a link
+    const offcanvasEl = document.getElementById('offcanvasNav');
+    offcanvasEl?.querySelectorAll('[data-close]').forEach(a => {
+      a.addEventListener('click', () => {
+        const oc = bootstrap.Offcanvas.getInstance(offcanvasEl);
+        oc?.hide();
+      });
+    });
+
+    // Footer: newsletter UX (no backend)
+    const form = document.getElementById('newsletterForm');
+    const msg  = document.getElementById('newsletterMsg');
+    form?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      msg.textContent = 'Merci ! Vous recevrez bientôt nos conseils.';
+      msg.className = 'small mt-2 text-success';
+      form.reset();
+      setTimeout(() => { msg.textContent = ''; msg.className = 'small mt-2'; }, 4000);
+    });
+
+    // Footer: back to top button
+    document.getElementById('toTopBtn')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      window.scrollTo({top:0, behavior:'smooth'});
+    });
+  </script>
 </body>
-
 </html>

@@ -52,6 +52,42 @@ class RestaurantMenuController extends Controller
             'categories'       => $items['categories']        ?? [],
         ]);
     }
+    public function showAgentMode(Request $request, string $uuid)
+    {
+        $locale  = $request->get('lang', 'en');
+        $template = $request->get('template', 'welcome7');
+        $baseUrl = config('services.qresto.base_url', 'https://qresto.foxirent.com/api');
+        $token   = config('services.qresto.token');
+
+        /* -------- Fetch available languages -------- */
+        $languages = Http::withToken($token)
+            ->withOptions(['verify' => false])
+            ->get("{$baseUrl}/restaurants/{$uuid}/languages")
+            ->throw()
+            ->json();
+
+        /* -------- Fetch menu + items in requested locale -------- */
+        $items = Http::withToken($token)
+            ->withOptions(['verify' => false])
+            ->withHeaders(['Accept-Language' => $locale])
+            ->get("{$baseUrl}/restaurants/{$uuid}/items")
+            ->throw()
+            ->json();
+        /* -------- Ensure the requested view exists -------- */
+        if (! view()->exists($template)) {
+            abort(404, "View [{$template}] not found.");
+        }
+
+        /* -------- Render Blade -------- */
+        return view('agent', [
+            'restaurant'       => $items['restaurant']        ?? null,
+            'currency'         => 'Dh',                       // change if needed
+            'languages'        => $languages['data']['languages']       ?? [],
+            'default_language' => $languages['data']['default_language'] ?? null,
+            'menu'             => $items['menu']              ?? null,
+            'categories'       => $items['categories']        ?? [],
+        ]);
+    }
 
 
     public function showOld(Request $request)

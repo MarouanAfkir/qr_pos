@@ -1,4 +1,4 @@
-{{-- resources/views/welcome.blade.php (Waiter mode with Client parity + per-restaurant storage) --}}
+{{-- resources/views/agent.blade.php --}}
 @php
     use Illuminate\Support\Str;
 
@@ -14,12 +14,12 @@
     $tagline           = $restaurant['settings']['tagline'] ?? 'Fresh • Local • Delicious';
 
     $rawMenuName = trim($menu['name'] ?? '');
-    $menuTitle   = $rawMenuName && $rawMenuName !== $restaurantName ? $rawMenuName : __('Our Menu');
+    $menuTitle   = $rawMenuName && $rawMenuName !== $restaurantName ? $rawMenuName : __('Partner Ordering');
     $currency    = ' DH';
 
     $isRTL = in_array(strtolower($default_language), ['ar','he','fa','ur']);
 
-    /* Cart/Tray scoping per restaurant (prevents leaking between restaurants) */
+    /* Cart scoping per restaurant (prevents cart leaking between restaurants) */
     $restaurantId  = $restaurant['id'] ?? null;
     $restaurantKey = $restaurantId !== null ? ('r' . $restaurantId) : Str::slug($restaurantName);
 
@@ -33,41 +33,35 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ $restaurantName }} – Digital Menu (Waiter)</title>
+    <title>{{ $restaurantName }} – {{ __('Delivery Partner Mode') }}</title>
 
     <!-- Assets -->
     <link rel="shortcut icon" href="{{ asset('assets/img/favicon.png') }}">
     <link rel="stylesheet" href="{{ asset('assets/css/bootstrap.min.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/css/all.min.css') }}">
-    <link rel="stylesheet" href="{{ asset('assets/css/animate.css') }}">
-    <link rel="stylesheet" href="{{ asset('assets/css/magnific-popup.css') }}">
-    <link rel="stylesheet" href="{{ asset('assets/css/meanmenu.css') }}">
-    <link rel="stylesheet" href="{{ asset('assets/css/swiper-bundle.min.css') }}">
-    <link rel="stylesheet" href="{{ asset('assets/css/nice-select.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/css/main.css') }}">
+    <!-- QR Code -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
 
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
-    <!-- QR Scanner (for importing client QR) -->
-    <script src="https://unpkg.com/html5-qrcode" defer></script>
 
     <style>
         :root{
-            --brand:#6F4E37;      /* Espresso (used for prices & CTAs) */
-            --brand-2:#C49A6C;    /* Latte */
-            --cream:#FBF7F2;      /* Cream bg */
-            --ink:#1f2937;        /* Text */
+            --brand:#6F4E37;
+            --brand-2:#C49A6C;
+            --cream:#FBF7F2;
+            --ink:#1f2937;
             --muted:#6b7280;
             --chip:#fff7ea;
             --chip-b:#f2e4d3;
             --ring:rgba(196,154,108,.25);
-            --accent:#facc15;     /* Gold accent */
+            --accent:#facc15;
             --danger:#ef4444;
             --success:#16a34a;
 
-            /* Header palette (restaurant-friendly, NOT brown): peach → mint */
-            --header-top:#FFE9D1;  /* peach */
-            --header-btm:#E8F5E9;  /* mint */
+            --header-top:#FFE9D1;
+            --header-btm:#E8F5E9;
             --header-border:#e3eee5;
         }
 
@@ -89,7 +83,6 @@
         }
         .hero-inner { max-width:1100px; margin:0 auto; position:relative; }
 
-        /* Lang switcher */
         .hero-tools { position:absolute; top:.6rem; {{ $isRTL ? 'left' : 'right' }}:.6rem; display:flex; gap:.5rem; }
         .btn-pill {
             background:#fff;
@@ -107,7 +100,6 @@
         .hero .dropdown-item:hover { background:rgba(196,154,108,.12) }
         .hero .dropdown-item.active { background:linear-gradient(135deg,#fde7c7,#fff); font-weight:800 }
 
-        /* Logo & meta */
         .restaurant-logo-wrapper{
             width:124px;height:124px;margin:0 auto .55rem;border-radius:50%;
             background:#fff;display:flex;align-items:center;justify-content:center;
@@ -120,20 +112,39 @@
         .hero-meta i{margin-inline-end:.35rem}
         .tagline{color:#4f6c4f; font-style:italic; margin:.2rem 0 0}
 
+        /* ===== AGENT MODE BANNER ===== */
+        .agent-banner{
+            display:grid; grid-template-columns: 48px 1fr; gap:.8rem; align-items:center;
+            background:#fff1e6; border:1px solid #fed7aa; color:#7a3416; border-radius:14px;
+            padding:.8rem .9rem; margin:.9rem auto 0; max-width:980px; box-shadow:0 8px 28px rgba(124,45,18,.06);
+        }
+        .agent-banner .icon-bubble{
+            width:48px;height:48px;border-radius:12px;display:grid;place-items:center;
+            background:#fff; border:1px solid #fed7aa; box-shadow:0 6px 16px rgba(0,0,0,.06);
+            font-size:1.15rem;
+        }
+        .agent-banner .eyebrow{
+            display:inline-flex; align-items:center; gap:.4rem;
+            background:#fff; border:1px solid #fed7aa; color:#7a3416;
+            border-radius:999px; padding:.15rem .55rem; font-weight:800; font-size:.75rem;
+        }
+        .agent-banner .headline{ font-weight:800; line-height:1.25; margin:.2rem 0 .2rem; font-size:1.05rem; }
+        .agent-banner .grad{ background:linear-gradient(90deg,#a3512a,#e67e22 60%,#f59e0b); -webkit-background-clip:text; background-clip:text; color:transparent; }
+        .agent-banner .sub{ font-size:.88rem; color:#8a4b1c; opacity:.9 }
+
         /* ===== STICKY TOOLS ===== */
         .sticky-tools{
             position:sticky; top:0; z-index:60;
             background:rgba(255,255,255,.92);
             backdrop-filter: blur(6px);
-            border-bottom:1px solid var(--chip-b);
+            border-bottom:1px solid #efe6db;
             padding:.45rem 0;
             margin-bottom:1.2rem;
         }
         .search-row{ display:flex; gap:.5rem; align-items:center; }
         #menuSearch{
-            flex:1 1 auto;
             border-radius:999px; padding:.6rem 1rem; font-size:.98rem;
-            border:2px solid var(--chip-b); background:#fff; transition:.2s; color:var(--ink);
+            border:2px solid var(--chip-b); background:#fff; transition:.2s; color:var(--ink); flex:1 1 auto;
         }
         #menuSearch::placeholder{color:#9b8f89}
         #menuSearch:focus{border-color:var(--brand-2); box-shadow:0 0 0 5px var(--ring); outline:0}
@@ -157,20 +168,13 @@
         /* ===== CATEGORIES ===== */
         .categories-wrapper{position:relative}
         .categories-scroll{
-            display:flex !important;
-            flex-wrap:nowrap !important;
-            gap:.5rem;
-            margin:.1rem 0 .3rem;
-            padding:0 1.2rem .4rem;
-            overflow-x:auto;
-            overflow-y:hidden;
-            -webkit-overflow-scrolling:touch;
-            scroll-snap-type:x mandatory;
-            touch-action:pan-x;
-            -ms-overflow-style: none;
-            scrollbar-width: none;
+            display:flex !important; flex-wrap:nowrap !important; gap:.5rem;
+            margin:.1rem 0 .3rem; padding:0 1.2rem .4rem;
+            overflow-x:auto; overflow-y:hidden; -webkit-overflow-scrolling:touch;
+            scroll-snap-type:x mandatory; touch-action:pan-x;
+            -ms-overflow-style:none; scrollbar-width:none;
         }
-        .categories-scroll::-webkit-scrollbar{ display:none; }
+        .categories-scroll::-webkit-scrollbar{display:none}
         .categories-scroll .nav-item{flex:0 0 auto; scroll-snap-align:start}
         .categories-scroll .nav-link{
             padding:.5rem .95rem; font-size:.9rem; font-weight:800; color:#5a3d1b; white-space:nowrap;
@@ -179,8 +183,6 @@
         }
         .categories-scroll .nav-link:hover{transform:translateY(-1px); box-shadow:0 4px 10px rgba(0,0,0,.06)}
         .categories-scroll .nav-link.active{color:#000; background:#f6e3cf; border-color:transparent; box-shadow:0 3px 10px rgba(0,0,0,.08)}
-
-        /* Arrow buttons (normal mode) */
         .cat-nav{
             position:absolute; top:50%; transform:translateY(-50%); width:32px; height:32px; border-radius:50%;
             display:flex; align-items:center; justify-content:center; background:#fff; border:1px solid var(--brand-2);
@@ -190,30 +192,67 @@
         .cat-prev{{ $isRTL ? ':right' : ':left' }}:.25rem;
         .cat-next{{ $isRTL ? ':left' : ':right' }}:.25rem;
 
-        /* ≥576px: grid layout, hide arrows */
         @media(min-width:576px){
             .categories-scroll{
                 overflow:visible;
                 display:grid !important;
                 grid-template-columns: repeat(auto-fit, minmax(135px, max-content));
-                justify-content:center;
-                gap:.6rem;
-                padding:0;
-                margin-left:auto; margin-right:auto;
-                max-width:1100px;
+                justify-content:center; gap:.6rem; padding:0;
+                margin-left:auto; margin-right:auto; max-width:1100px;
             }
             .cat-nav{display:none}
         }
 
-        /* ===== CATEGORY SHEET (popup mode) ===== */
+        /* ===== CATEGORY SHEET (popup mode with improved drag) ===== */
         .category-sheet{
-            height:min(70vh, 520px);
+            height: var(--sheet-h, min(70vh, 520px));
+            max-height: 100vh;
             border-top-left-radius:16px; border-top-right-radius:16px;
             box-shadow:0 -18px 40px rgba(0,0,0,.18);
+            will-change: height;
+            transition: height .18s ease;
         }
+        .category-sheet.is-full{
+            height: 100vh;
+            height: 100dvh;
+            border-top-left-radius:0; border-top-right-radius:0;
+        }
+        .category-sheet.is-dragging{
+            transition: none;
+            user-select: none;
+        }
+
+        /* BIGGER, CENTERED, DRAGGABLE HEADER */
+        .category-sheet .offcanvas-header{
+            position: relative;
+            display:block; /* let us center content */
+            text-align:center;
+            padding: .6rem 3rem .4rem; /* wide side padding for the close button */
+            cursor: grab;               /* entire header is a drag surface */
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        .category-sheet.is-dragging .offcanvas-header{ cursor: grabbing; }
+        .category-sheet .offcanvas-title{
+            margin:0; font-weight:800; display:inline-flex; align-items:center; gap:.4rem;
+        }
+        .category-sheet .btn-close{
+            position:absolute; top:.6rem; right:.75rem;
+        }
+        html[dir="rtl"] .category-sheet .btn-close{
+            right:auto; left:.75rem;
+        }
+
+        /* Larger handle (also draggable) */
         .category-sheet .handle{
-            width:42px; height:5px; border-radius:999px; background:#ddd; margin:.4rem auto 0;
+            width:56px; height:10px; border-radius:999px;
+            background:#cfcfcf; margin:.3rem auto .25rem;
+            cursor:inherit; /* inherits grab/grabbing from header state */
+            touch-action:none;
         }
+
+        .category-sheet .offcanvas-body{ overflow:auto }
+
         .cat-grid{
             display:grid; grid-template-columns: repeat(auto-fill, minmax(150px,1fr));
             gap:.6rem;
@@ -248,42 +287,29 @@
         .price-wrap del{color:#9ca3af; margin-inline-end:.35rem}
         .save-badge{background:#dcfce7; color:#065f46; border-radius:6px; font-size:.72rem; padding:.1rem .35rem; margin-inline-start:.35rem; font-weight:700}
 
-        /* ===== MODAL (option CARDS) ===== */
+        /* ===== MODAL (options UI) ===== */
         #itemModal .modal-content{border:0; border-radius:1rem; box-shadow:0 10px 36px rgba(0,0,0,.18)}
         #itemModal .modal-header{
-            background:#fff3cf;
-            border-bottom:none; border-top-left-radius:1rem; border-top-right-radius:1rem;
-            padding:.7rem 1rem;
+            background:#fff3cf; border-bottom:none; border-top-left-radius:1rem; border-top-right-radius:1rem; padding:.7rem 1rem;
         }
         #itemModal .modal-title{font-weight:800; color:#5f3b0e; font-size:1.25rem}
         #itemModal .modal-body{padding:1rem 1rem 1.15rem}
-
-        /* Mobile-centered modal content */
         @media (max-width:575.98px){
             #itemModal .modal-body{ text-align:center; }
             #itemModal img{ margin:0 auto; }
             #itemModal .qty-wrap{ justify-content:center; }
             #itemModal .cta-row{ justify-content:center; gap:.8rem; }
         }
-
         #itemModal img{width:120px; height:120px; object-fit:cover; border-radius:.8rem; box-shadow:0 6px 16px rgba(0,0,0,.1)}
         .lead-price{font-weight:800; color:var(--brand)}
         .v-group{margin:.85rem 0}
-        .v-title{font-weight:800; margin-bottom:.5rem}
-
-        .options-grid{
-            display:grid; gap:.55rem;
-            grid-template-columns: repeat(auto-fill,minmax(140px,1fr));
-        }
-        .option-card{
-            display:block; user-select:none; cursor:pointer;
-            background:#fff; border:2px solid #f2e4d3; border-radius:.85rem; padding:.6rem .65rem;
-            transition:.15s; height:100%; position:relative;
-        }
+        .v-title{font-weight:800; margin-bottom:.5rem; text-transform:uppercase; letter-spacing:.4px;}
+        .options-grid{ display:grid; gap:.55rem; grid-template-columns: repeat(auto-fill,minmax(140px,1fr)); }
+        .option-card{ display:block; user-select:none; cursor:pointer; background:#fff; border:2px solid #f2e4d3; border-radius:.85rem; padding:.6rem .65rem; transition:.15s; height:100%; position:relative; }
         .option-card.disabled{opacity:.45; cursor:not-allowed}
         .option-input{position:absolute; opacity:0; pointer-events:none; width:0; height:0}
         .option-inner{display:flex; align-items:center; justify-content:space-between; gap:.75rem; position:relative;}
-        .option-name{font-weight:700; color:#1f2937}
+        .option-name{font-weight:800; color:#1f2937; text-transform:uppercase; letter-spacing:.3px;}
         .option-badge{background:#fff7ea; border:1px solid #f2e4d3; color:#6b4b2f; border-radius:.65rem; padding:.15rem .45rem; font-size:.8rem; white-space:nowrap}
         .option-card.is-selected{border-color: var(--brand-2); background:#fff9f2; box-shadow:0 0 0 4px var(--ring);}
         .option-card:focus-within{box-shadow:0 0 0 4px var(--ring);}
@@ -300,48 +326,42 @@
         .btn-primary-cta:hover{background:#5c3f2e}
         .req-hint{font-size:.85rem; color:#b45309; display:none}
 
-        /* ===== TABLE-BASED TRAY ===== */
-        .tray-toggle{
+        /* ===== CART ===== */
+        .cart-toggle{
             position:fixed; {{ $isRTL ? 'left' : 'right' }}:16px; bottom:16px; width:56px; height:56px; border-radius:50%;
             background:var(--brand); color:#fff; border:none; display:flex; align-items:center; justify-content:center;
             box-shadow:0 12px 28px rgba(0,0,0,.22); z-index:71;
         }
-        .tray-toggle .badge{
+        .cart-toggle .badge{
             position:absolute; top:-6px; {{ $isRTL ? 'left' : 'right' }}:-6px; background:#ef4444; color:#fff; border-radius:999px; padding:.15rem .45rem; font-size:.7rem; font-weight:800
         }
-        .tray-toggle .tbl-label{
-            position:absolute; bottom:-6px; {{ $isRTL ? 'right' : 'left' }}:-6px; background:#111827; color:#fff; border-radius:6px; padding:.05rem .35rem; font-size:.7rem; font-weight:800
-        }
-        .tray{
-            position:fixed; {{ $isRTL ? 'left' : 'right' }}:16px; bottom:16px; width:min(480px,94vw);
-            background:#fff; border:1px solid var(--chip-b); box-shadow:0 14px 40px rgba(0,0,0,.18);
+        .cart{
+            position:fixed; {{ $isRTL ? 'left' : 'right' }}:16px; bottom:16px; width:min(460px,94vw);
+            background:#fff; border:1px solid #efe6db; box-shadow:0 14px 40px rgba(0,0,0,.18);
             border-radius:1rem; overflow:hidden; z-index:70; transform: translateY(110%); transition:.25s;
         }
-        .tray.open{ transform: translateY(0) }
-        .tray-header{display:flex; align-items:center; justify-content:space-between; gap:.6rem; padding:.6rem .9rem; background:#fff9f1; border-bottom:1px solid #f0e6da; flex-wrap:wrap}
-        .tray-header .table-ctrls{display:flex; align-items:center; gap:.4rem; flex-wrap:wrap}
-        .tray-header select, .tray-header input{height:32px;font-size:.9rem}
-        .tray-header .import-wrap{display:flex; align-items:center; gap:.35rem; flex-wrap:wrap}
-        .tray-body{max-height:46vh; overflow:auto; padding:.6rem .9rem}
-        .tray-line{display:flex; gap:.7rem; padding:.55rem 0; border-bottom:1px dashed #e9e1d9}
-        .tray-line:last-child{border-bottom:none}
-        .tray-line img{width:48px;height:48px;border-radius:.5rem;object-fit:cover}
-        .tray-line h6{margin:0; font-weight:800}
-        .tray-line small{color:var(--muted)}
-        .tray-qty{display:flex; align-items:center; gap:.35rem}
-        .tray-qty button{width:26px;height:26px;border:1px solid var(--chip-b); background:var(--chip); border-radius:6px}
-        .tray-footer{display:flex; align-items:center; justify-content:space-between; padding:.65rem .9rem; background:#fffaf3; border-top:1px solid #eee2d4}
+        .cart.open{ transform: translateY(0) }
+        .cart-header{display:flex; align-items:center; justify-content:space-between; gap:.5rem; padding:.6rem .9rem; background:#fff9f1; border-bottom:1px solid #f0e6da}
+        .cart-body{max-height:46vh; overflow:auto; padding:.6rem .9rem}
+        .cart-line{display:flex; gap:.7rem; padding:.55rem 0; border-bottom:1px dashed #e9e1d9}
+        .cart-line:last-child{border-bottom:none}
+        .cart-line img{width:48px;height:48px;border-radius:.5rem;object-fit:cover}
+        .cart-line h6{margin:0; font-weight:800}
+        .cart-line small{color:var(--muted)}
+        .cart-qty{display:flex; align-items:center; gap:.35rem}
+        .cart-qty button{width:26px;height:26px;border:1px solid var(--chip-b); background:var(--chip); border-radius:6px}
+        .cart-footer{display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:.5rem; padding:.65rem .9rem; background:#fffaf3; border-top:1px solid #eee2d4}
+        .btn-confirm{background:var(--success); color:#fff; border:none; padding:.5rem .9rem; border-radius:.6rem; font-weight:800}
 
-        .client-meta{background:#f7fbff;border:1px solid #e0eefb;border-radius:.5rem;padding:.35rem .5rem;margin-bottom:.4rem}
-        .client-meta .badge{background:#e2e8f0;color:#111;border-radius:.35rem}
+        /* ===== CONFIRM / QR ===== */
+        #confirmModal .modal-content{border:0;border-radius:1rem}
+        #confirmModal .modal-header{background:#fff1e6;border:0}
+        #qrBox{display:flex; align-items:center; justify-content:center; background:#fff; border:1px dashed #d1d5db; border-radius:.75rem; padding:1rem; min-height:220px}
+        #qrActions .btn{border-radius:.6rem}
 
         /* Back to top */
         #toTop{position:fixed; {{ $isRTL ? 'left' : 'right' }}:90px; bottom:18px; width:42px;height:42px;border-radius:50%;background:var(--accent);color:#222;border:none;box-shadow:0 8px 22px rgba(0,0,0,.18);display:none;align-items:center;justify-content:center;z-index:60}
         #toTop:hover{background:#ffe16a}
-
-        /* Scanner modal */
-        #qrReader { width: 100%; }
-        .scanner-help{font-size:.9rem;color:#6b7280}
     </style>
 </head>
 
@@ -350,7 +370,6 @@
     {{-- ===== HERO ===== --}}
     <section class="hero">
         <div class="hero-inner">
-
             {{-- Lang switcher --}}
             <div class="hero-tools">
                 <div class="dropdown">
@@ -389,6 +408,16 @@
                 @if($phone2)
                     <span><i class="fa-solid fa-phone"></i>{{ $phone2 }}</span>
                 @endif
+            </div>
+
+            {{-- Agent banner --}}
+            <div class="agent-banner" role="status" aria-live="polite">
+                <div class="icon-bubble"><i class="fa-solid fa-truck-fast"></i></div>
+                <div class="copy text-start">
+                    <span class="eyebrow"><i class="fa-solid fa-shield-check"></i> {{ __('Partner Mode') }}</span>
+                    <div class="headline">{{ __('Build the cart and') }} <span class="grad">{{ __('send via WhatsApp') }}</span> {{ __('(QR optional)') }}</div>
+                    <div class="sub">{{ __('No extra form — restaurants will recognize you on WhatsApp.') }}</div>
+                </div>
             </div>
         </div>
     </section>
@@ -435,10 +464,10 @@
         </div>
     </div>
 
-    {{-- ===== Menu ===== --}}
+    {{-- ===== Menu (container) ===== --}}
     <section class="food-menu-section fix section-padding">
         <div class="food-menu-wrapper style1">
-            <div class="container ">
+            <div class="container">
                 <div class="food-menu-tab-wrapper style-bg px-1 px-md-5">
 
                     <!-- title -->
@@ -537,14 +566,14 @@
             <p class="mb-2">&copy; {{ now()->year }} <a href="#">{{ $restaurantName }}</a>.
                 {{ __('All rights reserved.') }}</p>
             <p class="mb-0 small">{{ __('Crafted with') }} <i class="fa-solid fa-heart" style="color:var(--brand)"></i>
-                {{ __('for food lovers') }}</p>
+                {{ __('for couriers & restaurants') }}</p>
         </div>
     </footer>
 
     {{-- Back to top --}}
     <button id="toTop" aria-label="{{ __('Back to top') }}"><i class="fa-solid fa-arrow-up"></i></button>
 
-    {{-- ===== Item Modal (Interactive) ===== --}}
+    {{-- ===== Item Modal ===== --}}
     <div class="modal fade" id="itemModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content">
@@ -559,7 +588,6 @@
                             <p id="modalDesc" class="mb-2"></p>
                             <h5 id="modalPrice" class="lead-price mb-3"></h5>
 
-                            <!-- Option cards injected here -->
                             <div id="modalOptions"></div>
 
                             <div class="d-flex align-items-center justify-content-between mt-2">
@@ -572,8 +600,8 @@
                             </div>
 
                             <div class="cta-row">
-                                <button id="addToTray" class="btn-primary-cta">
-                                    <i class="fa-solid fa-clipboard-check me-1"></i> {{ __('Add to Table Order') }}
+                                <button id="addToCart" class="btn-primary-cta">
+                                    <i class="fa-solid fa-cart-plus me-1"></i> {{ __('Add to Cart') }}
                                 </button>
                                 <div class="small text-muted" id="perUnitNote">{{ __('Price per unit incl. selected options') }}</div>
                             </div>
@@ -584,60 +612,69 @@
         </div>
     </div>
 
-    {{-- ===== Tray (Waiter) with Client Code Import) ===== --}}
-    <button class="tray-toggle" id="trayToggle" title="{{ __('Open table orders') }}">
-        <i class="fa-solid fa-clipboard-list"></i>
-        <span class="badge" id="trayCount">0</span>
-        <span class="tbl-label" id="currentTableBadge">T1</span>
+    {{-- ===== Floating Cart ===== --}}
+    <button class="cart-toggle" id="cartToggle" title="{{ __('Open cart') }}">
+        <i class="fa-solid fa-bag-shopping"></i>
+        <span class="badge" id="cartCount">0</span>
     </button>
-    <div class="tray" id="tray">
-        <div class="tray-header">
-            <div class="table-ctrls">
-                <i class="fa-solid fa-chair me-1"></i>
-                <label for="tableSelect" class="me-1 fw-bold">{{ __('Table') }}</label>
-                <select id="tableSelect" class="form-select form-select-sm w-auto">
-                    @for($i=1;$i<=20;$i++)
-                        <option value="{{ $i }}">#{{ $i }}</option>
-                    @endfor
-                </select>
-            </div>
-
-            {{-- Client code import --}}
-            <div class="import-wrap">
-                <input id="clientCode" class="form-control form-control-sm" style="min-width:220px" placeholder="{{ __('Paste client code / JSON / URL…') }}">
-                <button class="btn btn-sm btn-outline-primary" id="importCode"><i class="fa-solid fa-download me-1"></i>{{ __('Import') }}</button>
-                <button class="btn btn-sm btn-outline-dark" id="scanCode" data-bs-toggle="modal" data-bs-target="#scanModal"><i class="fa-solid fa-qrcode me-1"></i>{{ __('Scan') }}</button>
-                <button class="btn btn-sm btn-outline-secondary" id="clearTray"><i class="fa-solid fa-trash-can"></i> {{ __('Clear This Table') }}</button>
+    <div class="cart" id="cart">
+        <div class="cart-header">
+            <div class="fw-bold"><i class="fa-solid fa-receipt me-1"></i>{{ __('Your Order') }}</div>
+            <div class="d-flex gap-2">
+                <button class="btn btn-sm btn-outline-secondary" id="clearCart"><i class="fa-solid fa-trash-can"></i> {{ __('Clear') }}</button>
             </div>
         </div>
-
-        <div class="tray-body" id="trayBody"></div>
-
-        <div class="tray-footer">
-            <div>
-                <div class="fw-bold">{{ __('Total') }}: <span id="trayTotal">0{{ $currency }}</span></div>
-                <small class="text-muted">{{ __('Give this to cashier / kitchen') }}</small>
-            </div>
-            <button class="btn btn-success fw-bold"><i class="fa-solid fa-check me-1"></i>{{ __('Mark as Sent') }}</button>
+        <div class="cart-body" id="cartBody"></div>
+        <div class="cart-footer">
+            <div class="fw-bold">{{ __('Total') }}: <span id="cartTotal">0{{ $currency }}</span></div>
+            <button class="btn-confirm" id="confirmBtn"><i class="fa-brands fa-whatsapp me-1"></i>{{ __('Confirm & Send via WhatsApp') }}</button>
         </div>
     </div>
 
-    {{-- Scanner Modal --}}
-    <div class="modal fade" id="scanModal" tabindex="-1" aria-hidden="true">
+    {{-- ===== Confirm / QR Modal ===== --}}
+    <div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title"><i class="fa-solid fa-qrcode me-2"></i>{{ __('Scan Client QR Code') }}</h5>
+                    <h5 class="modal-title"><i class="fa-solid fa-truck me-1"></i> {{ __('Order Summary & QR') }}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ __('Close') }}"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="scanner-help mb-2">
-                        {{ __('Point your camera at the customer QR. When detected, the order is imported automatically.') }}
+                    <div class="row g-3">
+                        <div class="col-12 col-md-6">
+                            <h6 class="fw-bold mb-2">{{ __('Order Details') }}</h6>
+                            <div id="confirmSummary" class="small"></div>
+
+                            <div class="d-flex flex-wrap gap-2 mt-3">
+                                <a class="btn btn-success btn-sm" id="whShare" target="_blank" rel="noopener">
+                                    <i class="fa-brands fa-whatsapp"></i> {{ __('Send via WhatsApp') }}
+                                </a>
+                                <button class="btn btn-outline-success btn-sm" id="whShareQR">
+                                    <i class="fa-brands fa-whatsapp"></i> {{ __('Share QR (image)') }}
+                                </button>
+                                <button class="btn btn-outline-secondary btn-sm" id="copySummary">
+                                    <i class="fa-regular fa-copy"></i> {{ __('Copy summary') }}
+                                </button>
+                            </div>
+                            <div class="text-muted small mt-2" id="shareHint" style="display:none;">
+                                {{ __('Your device/browser does not support sharing images directly. Use WhatsApp text share or download the QR below.') }}
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <h6 class="fw-bold mb-2">{{ __('Scan at Counter') }}</h6>
+                            <div id="qrBox"><div id="qrcode"></div></div>
+                            <div id="qrActions" class="d-flex gap-2 mt-3">
+                                <button class="btn btn-outline-secondary btn-sm" id="regenQR"><i class="fa-solid fa-rotate"></i> {{ __('Regenerate') }}</button>
+                                <a class="btn btn-outline-primary btn-sm" id="downloadQR"><i class="fa-solid fa-download"></i> {{ __('Download') }}</a>
+                                <button class="btn btn-outline-success btn-sm" id="printQR"><i class="fa-solid fa-print"></i> {{ __('Print') }}</button>
+                            </div>
+                            <div class="text-muted small mt-2">{{ __('Keep this QR handy. Staff can scan it to retrieve your order instantly.') }}</div>
+                        </div>
                     </div>
-                    <div id="qrReader"></div>
                 </div>
                 <div class="modal-footer">
-                    <button class="btn btn-secondary" data-bs-dismiss="modal">{{ __('Close') }}</button>
+                    <small class="text-muted me-auto">{{ __('Privacy: the QR only contains order data.') }}</small>
+                    <button class="btn btn-primary" data-bs-dismiss="modal">{{ __('Done') }}</button>
                 </div>
             </div>
         </div>
@@ -676,13 +713,20 @@
     <script src="{{ asset('assets/js/bootstrap.bundle.min.js') }}"></script>
 
     <script>
-        const IS_CAT_POPUP   = @json($categoryPopup);
-        const RESTAURANT_KEY = @json($restaurantKey);
+        const IS_CAT_POPUP = @json($categoryPopup);
+
+        /* ===== WhatsApp target (test) ===== */
+        const WA_NUMBER = '212643714062';
 
         /* ===== Helpers ===== */
         function formatMoney(val){ return (parseFloat(val).toFixed(2)) + '{{ $currency }}'; }
         function escapeRegExp(s){ return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'); }
         function highlight(text, q){ if(!q) return text; const re = new RegExp(`(${escapeRegExp(q)})`,'ig'); return text.replace(re,'<mark>$1</mark>'); }
+        function shortHash(str){
+            let h = 2166136261 >>> 0;
+            for (let i=0;i<str.length;i++){ h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
+            return (h >>> 0).toString(36).slice(0,6).toUpperCase();
+        }
 
         /* ===== Category arrows (normal mode) ===== */
         const catStrip = document.querySelector('.categories-scroll');
@@ -712,7 +756,7 @@
         window.addEventListener('scroll', () => { toTop.style.display = window.scrollY > 500 ? 'flex' : 'none'; });
         toTop.addEventListener('click', () => window.scrollTo({top:0, behavior:'smooth'}));
 
-        /* ===== Live search (with highlight) ===== */
+        /* Live search with highlight */
         $('#menuSearch').on('input', function () {
             const q = $(this).val().trim().toLowerCase();
             const $pills = $('#pills-tab'),
@@ -725,7 +769,7 @@
                 $panes.removeClass('d-none');
                 return;
             }
-            $pills.addClass('d-none'); // safe if not present
+            $pills.addClass('d-none');
             $panes.addClass('d-none');
             $res.removeClass('d-none');
 
@@ -745,7 +789,7 @@
             }
         });
 
-        /* ===== Modal logic: option cards (parity with Client) ===== */
+        /* ===== Modal logic (options) ===== */
         const itemModal = new bootstrap.Modal(document.getElementById('itemModal'));
         let currentItem = null;
 
@@ -759,7 +803,7 @@
                 const vid = v.id || ('v'+vIdx);
 
                 html += `<div class="v-group" data-vid="${vid}" data-single="${isSingle?1:0}" data-min="${minSel}" data-max="${maxSel}">
-                            <div class="v-title">${v.name}${v.is_required ? ' <span class="text-danger">*</span>' : ''}</div>
+                            <div class="v-title">${(v.name||'').toString().toUpperCase()}${v.is_required ? ' <span class="text-danger">*</span>' : ''}</div>
                             <div class="options-grid">`;
 
                 (v.options||[]).forEach((o, oIdx) => {
@@ -775,7 +819,7 @@
                         <label class="option-card ${disabled?'disabled':''}" ${isSingle ? 'role="radio"' : 'role="checkbox"'} aria-checked="false">
                             <input class="option-input" type="${inputType}" ${nameAttr} value="${oid}" data-adj="${adj}" ${def?'data-default="1"':''} ${disabled?'disabled':''}>
                             <div class="option-inner">
-                                <div class="option-name">${o.name}</div>
+                                <div class="option-name">${(o.name||'').toString().toUpperCase()}</div>
                                 ${badge}
                                 <span class="option-check" aria-hidden="true"><i class="fa-solid fa-check"></i></span>
                             </div>
@@ -814,7 +858,7 @@
                     if(sel < min){ ok = false; }
                 }
             });
-            document.getElementById('addToTray').disabled = !ok;
+            document.getElementById('addToCart').disabled = !ok;
             document.getElementById('reqHint').style.display = ok ? 'none' : 'block';
             return ok;
         }
@@ -855,10 +899,11 @@
         function gatherSelections(){
             const selections = [];
             document.querySelectorAll('#modalOptions .v-group').forEach(group=>{
-                const vName = group.querySelector('.v-title').textContent.replace('*','').trim();
+                const raw = group.querySelector('.v-title').textContent.replace('*','').trim();
+                const vName = raw; // already uppercase
                 const opts = [];
                 group.querySelectorAll('.option-input:checked').forEach(inp=>{
-                    const name = inp.closest('.option-card').querySelector('.option-name')?.textContent || '';
+                    const name = (inp.closest('.option-card').querySelector('.option-name')?.textContent || '').toUpperCase();
                     const adj  = parseFloat(inp.getAttribute('data-adj')||0);
                     opts.push({name, adj});
                 });
@@ -884,7 +929,6 @@
             const optsHtml = renderVariations(variations);
             $('#modalOptions').html(optsHtml);
 
-            // qty init
             $('#qtyInput').attr({min:minqty}).val(minqty);
             if(maxqty){ $('#qtyInput').attr({max:maxqty}); } else { $('#qtyInput').removeAttr('max'); }
 
@@ -896,14 +940,12 @@
                 currency: '{{ $currency }}'
             };
 
-            // bind option inputs (change)
             $('#modalOptions').off('change').on('change', '.option-input', function(){
                 enforceMax(this.closest('.v-group'), this);
                 refreshSelectionStyles();
                 validateRequired(); recalcPrice();
             });
 
-            // defaults & first calc
             applyDefaults();
             refreshSelectionStyles();
             validateRequired(); recalcPrice();
@@ -934,97 +976,30 @@
             recalcPrice();
         });
 
-        /* ===== Build menu index for lookups (image etc.) ===== */
-        const menuIndex = {};
-        document.querySelectorAll('.single-menu-items').forEach(el=>{
-            const name = el.getAttribute('data-name');
-            if(name && !menuIndex[name]){
-                menuIndex[name] = {
-                    img: el.getAttribute('data-img') || '',
-                    base: parseFloat(el.getAttribute('data-base') || '0')
-                };
-            }
-        });
+        /* ===== Agent Cart (localStorage) ===== */
+        const RESTAURANT_KEY = @json($restaurantKey);
+        const cartKey   = 'agentCart:' + RESTAURANT_KEY;
+        const lastKey   = 'agentLastOrder:' + RESTAURANT_KEY;
 
-        /* ===== Per-restaurant storage keys ===== */
-        const ORDERS_KEY         = 'ordersByTable:'   + RESTAURANT_KEY;
-        const META_KEY           = 'tableMeta:'       + RESTAURANT_KEY;
-        const CURRENT_TABLE_KEY  = 'currentTable:'    + RESTAURANT_KEY;
+        const cart      = document.getElementById('cart');
+        const cartToggle= document.getElementById('cartToggle');
+        const cartBody  = document.getElementById('cartBody');
+        const cartTotal = document.getElementById('cartTotal');
+        const cartCount = document.getElementById('cartCount');
+        const clearCart = document.getElementById('clearCart');
 
-        /* ===== Table-based orders (localStorage) ===== */
-        const tray       = document.getElementById('tray');
-        const trayToggle = document.getElementById('trayToggle');
-        const trayBody   = document.getElementById('trayBody');
-        const trayTotalEl= document.getElementById('trayTotal');
-        const trayCount  = document.getElementById('trayCount');
-        const clearTray  = document.getElementById('clearTray');
-        const tableSelect= document.getElementById('tableSelect');
-        const tableBadge = document.getElementById('currentTableBadge');
+        function getCart(){ try { return JSON.parse(localStorage.getItem(cartKey)||'[]'); } catch(e){ return []; } }
+        function setCart(arr){ localStorage.setItem(cartKey, JSON.stringify(arr)); renderCart(); }
 
-        function getAllOrders(){ try { return JSON.parse(localStorage.getItem(ORDERS_KEY)||'{}'); } catch(e){ return {}; } }
-        function setAllOrders(obj){ localStorage.setItem(ORDERS_KEY, JSON.stringify(obj)); }
-
-        function getMeta(){ try { return JSON.parse(localStorage.getItem(META_KEY)||'{}'); } catch(e){ return {}; } }
-        function setMeta(obj){ localStorage.setItem(META_KEY, JSON.stringify(obj)); }
-
-        function getCurrentTable(){ return localStorage.getItem(CURRENT_TABLE_KEY) || '1'; }
-        function setCurrentTable(t){ localStorage.setItem(CURRENT_TABLE_KEY, String(t)); tableBadge.textContent = 'T'+t; }
-
-        function getTrayFor(tableId){ const all = getAllOrders(); return all[tableId] || []; }
-        function setTrayFor(tableId, arr){ const all = getAllOrders(); all[tableId] = arr; setAllOrders(all); renderTray(); }
-
-        function getMetaFor(tableId){ const m = getMeta(); return m[tableId] || null; }
-        function setMetaFor(tableId, meta){ const m = getMeta(); m[tableId] = meta; setMeta(m); renderTray(); }
-
-        function addToTray(line){
-            const t = getCurrentTable();
-            const arr = getTrayFor(t);
-
-            // merge if same name and same selections
-            const key = JSON.stringify({n:line.name, s:(line.selections||[])});
-            let merged = false;
-            for (let i=0;i<arr.length;i++){
-                const k2 = JSON.stringify({n:arr[i].name, s:(arr[i].selections||[])});
-                if (k2 === key){
-                    arr[i].qty += line.qty;
-                    arr[i].total = arr[i].unit * arr[i].qty;
-                    merged = true; break;
-                }
-            }
-            if(!merged) arr.push(line);
-
-            setTrayFor(t, arr);
-            tray.classList.add('open');
-            trayToggle.querySelector('.badge').classList.add('animate__animated','animate__heartBeat');
-            setTimeout(()=> trayToggle.querySelector('.badge').classList.remove('animate__animated','animate__heartBeat'), 900);
+        function addToCart(line){
+            const arr = getCart(); arr.push(line); setCart(arr); cart.classList.add('open');
         }
 
-        function renderTray(){
-            const t = getCurrentTable();
-            tableSelect.value = t;
-            tableBadge.textContent = 'T'+t;
-
-            const arr = getTrayFor(t);
-            const meta = getMetaFor(t);
-
-            trayBody.innerHTML = '';
-
-            // client meta block if present
-            if(meta && (meta.cname || meta.cphone || meta.notes)){
-                const info = document.createElement('div');
-                info.className = 'client-meta';
-                info.innerHTML = `
-                    <div class="d-flex flex-wrap align-items-center gap-2">
-                        ${meta.cname ? `<span class="badge"><i class="fa-solid fa-user me-1"></i>${meta.cname}</span>`:''}
-                        ${meta.cphone ? `<span class="badge"><i class="fa-solid fa-phone me-1"></i>${meta.cphone}</span>`:''}
-                        ${meta.notes ? `<span class="badge"><i class="fa-solid fa-note-sticky me-1"></i>{{ __('Notes') }}</span>`:''}
-                    </div>
-                    ${meta.notes ? `<div class="small mt-1">${meta.notes}</div>`:''}
-                `;
-                trayBody.appendChild(info);
-            }
-
+        function renderCart(){
+            const arr = getCart();
+            cartBody.innerHTML = '';
             let total = 0; let count = 0;
+
             arr.forEach((ln, idx) => {
                 total += ln.total;
                 count += ln.qty;
@@ -1035,16 +1010,16 @@
                 }).join('');
 
                 const el = document.createElement('div');
-                el.className = 'tray-line';
+                el.className = 'cart-line';
                 el.innerHTML = `
-                    <img src="${ln.img || '{{ asset('assets/img/menu/menuThumb1_1.png') }}'}" alt="">
+                    <img src="${ln.img}" alt="">
                     <div class="flex-grow-1">
                         <h6>${ln.name}</h6>
                         ${selHtml}
                         <small class="text-muted">{{ __('Unit') }}: ${ln.unit.toFixed(2)}{{ $currency }}</small>
                     </div>
                     <div class="text-end">
-                        <div class="tray-qty mb-1">
+                        <div class="cart-qty mb-1">
                             <button data-act="dec" data-idx="${idx}"><i class="fa-solid fa-minus"></i></button>
                             <span>${ln.qty}</span>
                             <button data-act="inc" data-idx="${idx}"><i class="fa-solid fa-plus"></i></button>
@@ -1053,58 +1028,39 @@
                         <button class="btn btn-sm btn-link text-danger p-0 mt-1" data-act="rm" data-idx="${idx}">{{ __('Remove') }}</button>
                     </div>
                 `;
-                trayBody.appendChild(el);
+                cartBody.appendChild(el);
             });
-            trayTotalEl.textContent = total.toFixed(2) + '{{ $currency }}';
-            trayCount.textContent = count;
+            cartTotal.textContent = total.toFixed(2) + '{{ $currency }}';
+            cartCount.textContent = count;
 
-            trayBody.querySelectorAll('button[data-act]').forEach(b=>{
+            cartBody.querySelectorAll('button[data-act]').forEach(b=>{
                 b.addEventListener('click', ()=>{
                     const idx = parseInt(b.getAttribute('data-idx'),10);
                     const act = b.getAttribute('data-act');
-                    const t   = getCurrentTable();
-                    const arr = getTrayFor(t);
+                    const arr = getCart();
                     const ln  = arr[idx]; if(!ln) return;
-                    if(act==='inc'){
-                        ln.qty += 1;
-                    }else if(act==='dec'){
-                        ln.qty = Math.max(1, ln.qty-1);
-                    }else if(act==='rm'){
-                        arr.splice(idx,1);
-                    }
-                    if (arr[idx]) arr[idx].total = arr[idx].unit * arr[idx].qty;
-                    setTrayFor(t, arr);
+                    if(act==='inc'){ ln.qty += 1; }
+                    else if(act==='dec'){ ln.qty = Math.max(1, ln.qty-1); }
+                    else if(act==='rm'){ arr.splice(idx,1); }
+                    ln.total = ln.unit * ln.qty;
+                    setCart(arr);
                 });
             });
         }
 
-        // init table (scoped per restaurant)
-        (function initTable(){
-            const saved = getCurrentTable();
-            tableSelect.value = saved;
-            setCurrentTable(saved);
-            renderTray();
-        })();
+        // init
+        renderCart();
 
-        tableSelect.addEventListener('change', ()=>{
-            setCurrentTable(tableSelect.value);
-            renderTray();
-        });
+        cartToggle.addEventListener('click', ()=> cart.classList.toggle('open'));
+        clearCart.addEventListener('click', ()=> setCart([]));
 
-        trayToggle.addEventListener('click', ()=> tray.classList.toggle('open'));
-        clearTray.addEventListener('click', ()=>{
-            const t = getCurrentTable();
-            setTrayFor(t, []);
-            setMetaFor(t, null);
-        });
-
-        // Add to tray from modal
-        document.getElementById('addToTray').addEventListener('click', ()=>{
+        // Add to cart from modal
+        document.getElementById('addToCart').addEventListener('click', ()=>{
             if(!validateRequired()) return;
             const qty = parseInt(document.getElementById('qtyInput').value,10) || 1;
             const {unit, total} = recalcPrice();
             const selections = gatherSelections();
-            addToTray({
+            addToCart({
                 name: currentItem.name,
                 img:  currentItem.img,
                 unit, qty, total,
@@ -1113,138 +1069,210 @@
             itemModal.hide();
         });
 
-        /* ===== CLIENT CODE IMPORT ===== */
-        function tryParsePayload(raw){
-            if(!raw) return null;
+        /* ===== Confirm & QR ===== */
+        const confirmModalEl = document.getElementById('confirmModal');
+        const confirmModal = new bootstrap.Modal(confirmModalEl);
+        const qrcodeBox = document.getElementById('qrcode');
+        let lastPayload = null;
 
-            // If it's a URL with ?data=... param
-            try {
-                if(/^https?:\/\//i.test(raw)){
-                    const u = new URL(raw);
-                    const p = u.searchParams.get('data');
-                    if(p){ raw = p; }
-                }
-            } catch(e){}
-
-            // Try JSON direct
-            try { return JSON.parse(raw); } catch(e){}
-
-            // Try base64 -> JSON
-            try {
-                const txt = atob(raw);
-                return JSON.parse(txt);
-            } catch(e){}
-
-            return null;
-        }
-
-        function importClientOrderToCurrentTable(payload){
-            if(!payload || !Array.isArray(payload.items)){
-                alert('{{ __("Invalid client code.") }}');
-                return false;
-            }
-            const t = getCurrentTable();
-
-            // save client meta (optional)
-            const meta = {
-                cname: payload.cname || '',
-                cphone: payload.cphone || '',
-                notes: payload.notes || ''
+        function buildOrderPayload(){
+            const items = getCart().map(l => ([
+                l.name, l.qty, +l.unit.toFixed(2), +l.total.toFixed(2),
+                (l.selections||[]).map(v => [v.name, (v.options||[]).map(o => [o.name, +o.adj.toFixed(2)])])
+            ]));
+            const sum = +getCart().reduce((s,i)=>s+i.total,0).toFixed(2);
+            const payload = {
+                v: 1,
+                type: 'delivery_partner',
+                rid: '{{ hash('crc32b', $restaurantName) }}',
+                r: '{{ $restaurantName }}',
+                t: Date.now(),
+                cur: '{{ trim($currency) }}',
+                items,
+                sum
             };
-            setMetaFor(t, meta);
-
-            payload.items.forEach(it=>{
-                const qty  = parseInt(it.qty||1,10) || 1;
-                const unit = parseFloat(it.unit||0) || 0;
-                const total= parseFloat(it.total || (unit*qty));
-
-                // map selections
-                const selections = (it.sel||[]).map(v=>({
-                    name: v.name,
-                    options: (v.options||[]).map(o=>({ name: o.n || o.name || '', adj: parseFloat(o.a ?? o.adj ?? 0) || 0 }))
-                }));
-
-                // try to find image from menu by name
-                const mi = menuIndex[it.name] || {};
-                const img = mi.img || '';
-
-                addToTray({
-                    name: it.name,
-                    img,
-                    unit, qty, total,
-                    selections
-                });
-            });
-
-            return true;
+            payload.code = shortHash(JSON.stringify(payload).slice(0,256));
+            lastPayload = payload;
+            return payload;
         }
 
-        document.getElementById('importCode').addEventListener('click', ()=>{
-            const raw = (document.getElementById('clientCode').value||'').trim();
-            const payload = tryParsePayload(raw);
-            if(importClientOrderToCurrentTable(payload)){
-                document.getElementById('clientCode').value = '';
-                document.getElementById('tray').classList.add('open');
-            }
+        function renderConfirmSummary(payload){
+            const arr = payload.items || [];
+            const box = document.getElementById('confirmSummary');
+            if(!arr.length){ box.innerHTML = `<div class="text-muted">{{ __('Your cart is empty.') }}</div>`; return; }
+            box.innerHTML = arr.map(([name, qty, unit, total, sel])=>{
+                const opts = (sel||[]).map(([vname, options])=>{
+                    const os = (options||[]).map(([n,a])=> n + (a?` (+${a.toFixed(2)}{{ $currency }})`:``)).join(', ');
+                    return `<div class="text-muted">${vname}: ${os}</div>`;
+                }).join('');
+                return `<div class="mb-2">
+                            <div class="d-flex justify-content-between">
+                                <div><strong>${name}</strong> × ${qty}</div>
+                                <div class="fw-bold">${total.toFixed(2)}{{ $currency }}</div>
+                            </div>
+                            ${opts}
+                        </div>`;
+            }).join('') + `<hr class="my-2"><div class="d-flex justify-content-between"><div class="fw-bold">{{ __('Total') }}</div><div class="fw-bold">${payload.sum.toFixed(2)}{{ $currency }}</div></div>`;
+        }
+
+        function generateQR(payload){
+            if(typeof QRCode === 'undefined'){ console.warn('QRCode lib not loaded'); return; }
+            qrcodeBox.innerHTML = '';
+            new QRCode(qrcodeBox, {
+                text: JSON.stringify(payload),
+                width: 220,
+                height: 220,
+                correctLevel: QRCode.CorrectLevel.M
+            });
+        }
+
+        function downloadQR(){
+            const canvas = qrcodeBox.querySelector('canvas');
+            if(!canvas) return;
+            const link = document.getElementById('downloadQR');
+            link.download = `agent-order-{{ Str::slug($restaurantName) }}.png`;
+            link.href = canvas.toDataURL('image/png');
+        }
+
+        function buildShareText(payload){
+            const cur = '{{ $currency }}';
+            const S   = '------------------------------';
+            const lines = [];
+            lines.push(`*{{ $restaurantName }}* — *Agent Order*`);
+            lines.push(`*Code:* ${payload.code}`);
+            lines.push(S);
+            lines.push(`*Items*`);
+            (payload.items || []).forEach(([name, qty, unit, total, sel])=>{
+                lines.push(`- *${name}* ×${qty}`);
+                (sel||[]).forEach(([vname, options])=>{
+                    (options||[]).forEach(([n,a])=>{
+                        const adj = a ? ` (+${a.toFixed(2)}${cur})` : '';
+                        lines.push(`   • ${vname}: ${n}${adj}`);
+                    });
+                });
+                lines.push(`   — Line total: ${total.toFixed(2)}${cur}`);
+                lines.push('----------------');
+            });
+            lines.push(S);
+            lines.push(`*Grand total:* ${payload.sum.toFixed(2)}${cur}`);
+            return encodeURIComponent(lines.join('\n'));
+        }
+        function waUrlFor(payload){
+            return `https://wa.me/${WA_NUMBER}?text=${buildShareText(payload)}`;
+        }
+
+        function openPreview(payload){
+            renderConfirmSummary(payload);
+            setTimeout(()=> { generateQR(payload); downloadQR(); }, 10);
+            document.getElementById('whShare').href = waUrlFor(payload);
+            confirmModal.show();
+        }
+
+        document.getElementById('confirmBtn').addEventListener('click', ()=>{
+            const cartNow = getCart();
+            if(!cartNow.length){ cart.classList.add('open'); return; }
+            const payload = buildOrderPayload();
+            window.open(waUrlFor(payload), '_blank', 'noopener');
+            openPreview(payload);
+            localStorage.setItem(lastKey, JSON.stringify({ when: Date.now(), cart: cartNow }));
+            setCart([]);
         });
 
-        /* ===== QR SCAN (html5-qrcode) ===== */
-        let qrScanner = null;
-        const scanModalEl = document.getElementById('scanModal');
-        scanModalEl.addEventListener('shown.bs.modal', ()=>{
-            if(window.Html5QrcodeScanner){
-                qrScanner = new Html5QrcodeScanner("qrReader", { fps: 10, qrbox: 250 });
-                qrScanner.render((decodedText)=>{
-                    const payload = tryParsePayload(decodedText);
-                    if(importClientOrderToCurrentTable(payload)){
-                        const m = bootstrap.Modal.getInstance(scanModalEl);
-                        m?.hide();
-                        qrScanner.clear();
-                        qrScanner = null;
-                        document.getElementById('tray').classList.add('open');
-                    }
-                }, (error)=>{/* ignore */});
-            } else {
-                document.getElementById('qrReader').innerHTML = '<div class="text-danger">{{ __("Scanner failed to load.") }}</div>';
-            }
+        document.getElementById('confirmModal').addEventListener('shown.bs.modal', ()=>{
+            const payload = lastPayload || buildOrderPayload();
+            renderConfirmSummary(payload);
+            setTimeout(()=> { generateQR(payload); downloadQR(); }, 10);
+            document.getElementById('whShare').href = waUrlFor(payload);
         });
-        scanModalEl.addEventListener('hidden.bs.modal', ()=>{
-            if(qrScanner && qrScanner.clear){ qrScanner.clear(); qrScanner = null; }
-            document.getElementById('qrReader').innerHTML = '';
+        document.getElementById('regenQR').addEventListener('click', ()=>{
+            const payload = lastPayload || buildOrderPayload();
+            generateQR(payload); downloadQR();
+        });
+        document.getElementById('downloadQR').addEventListener('click', (e)=>{
+            if(!e.currentTarget.href) { e.preventDefault(); const p = lastPayload || buildOrderPayload(); generateQR(p); downloadQR(); }
+        });
+        document.getElementById('printQR').addEventListener('click', ()=>{
+            const canvas = qrcodeBox.querySelector('canvas');
+            if(!canvas) return;
+            const dataUrl = canvas.toDataURL('image/png');
+            const w = window.open('', 'PRINT', 'height=420,width=420');
+            w.document.write(`<img src="${dataUrl}" style="width:100%;height:auto;"/>`);
+            w.document.close(); w.focus(); w.print(); w.close();
+        });
+        document.getElementById('whShareQR').addEventListener('click', async ()=>{
+            const canvas = qrcodeBox.querySelector('canvas');
+            const hint = document.getElementById('shareHint');
+            hint.style.display = 'none';
+            if(!canvas){
+                const p = lastPayload || buildOrderPayload();
+                generateQR(p);
+                setTimeout(()=>document.getElementById('whShareQR').click(), 40);
+                return;
+            }
+            canvas.toBlob(async (blob)=>{
+                if(!blob) return;
+                const file = new File([blob], 'order-qr.png', { type: 'image/png' });
+                const payload = lastPayload || buildOrderPayload();
+                const text = decodeURIComponent(buildShareText(payload));
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    try{ await navigator.share({ files: [file], title: 'QR Order', text }); }
+                    catch(e){}
+                } else {
+                    hint.style.display = 'block';
+                }
+            });
+        });
+        document.getElementById('copySummary').addEventListener('click', async ()=>{
+            const payload = lastPayload || buildOrderPayload();
+            const text = decodeURIComponent(buildShareText(payload));
+            try{
+                await navigator.clipboard.writeText(text.replace(/\u00A0/g,' '));
+                const btn = document.getElementById('copySummary');
+                const old = btn.innerHTML;
+                btn.innerHTML = '<i class="fa-regular fa-circle-check"></i> {{ __('Copied!') }}';
+                setTimeout(()=> btn.innerHTML = old, 1200);
+            }catch(e){}
         });
 
-        /* ===== Category Popup interactions (parity with Client) ===== */
+        /* ===== Category Popup: DRAG anywhere on header to expand/full/close ===== */
         if (IS_CAT_POPUP) {
             const openBtn   = document.getElementById('openCategories');
             const sheetEl   = document.getElementById('categoriesSheet');
+            const headerEl  = sheetEl?.querySelector('.offcanvas-header'); // NEW: whole header as drag surface
+            const handle    = sheetEl?.querySelector('.handle');
             const catFilter = document.getElementById('catFilter');
-
             const catOffcanvas = sheetEl ? new bootstrap.Offcanvas(sheetEl) : null;
 
+            function defaultSheetHeight(){
+                const h = Math.round(window.innerHeight * 0.7);
+                return Math.min(h, 520);
+            }
+            function setSheetHeight(px){
+                sheetEl.style.setProperty('--sheet-h', px + 'px');
+            }
+
+            openBtn?.addEventListener('click', () => {
+                setSheetHeight(defaultSheetHeight());
+                sheetEl.classList.remove('is-full');
+                catOffcanvas?.show();
+                setTimeout(()=>catFilter?.focus(), 150);
+            });
+
             function showCategoryBySlug(slug){
-                // Clear search UI to reveal panes
                 const input = document.getElementById('menuSearch');
                 if (input) input.value = '';
                 $('#searchResults').addClass('d-none');
                 $('#pills-tabContent').removeClass('d-none');
 
-                // Switch tab-pane manually (since top nav is hidden in popup mode)
                 document.querySelectorAll('#pills-tabContent .tab-pane').forEach(p=>{
                     p.classList.remove('show','active');
                 });
                 const target = document.getElementById('pills-' + slug);
                 if (target) target.classList.add('show','active');
 
-                // Scroll a bit below sticky tools for context
                 const y = document.querySelector('.food-menu-section')?.getBoundingClientRect().top + window.scrollY - 60;
                 if (!isNaN(y)) window.scrollTo({ top: y, behavior: 'smooth' });
             }
-
-            openBtn?.addEventListener('click', () => {
-                catOffcanvas?.show();
-                setTimeout(()=>catFilter?.focus(), 150);
-            });
-
             sheetEl?.querySelectorAll('.cat-tile').forEach(btn=>{
                 btn.addEventListener('click', ()=>{
                     const slug = btn.getAttribute('data-slug');
@@ -1253,7 +1281,7 @@
                 });
             });
 
-            // Filter categories inside sheet
+            // Filter inside sheet
             catFilter?.addEventListener('input', (e)=>{
                 const q = (e.target.value || '').trim().toLowerCase();
                 sheetEl.querySelectorAll('.cat-tile').forEach(tile=>{
@@ -1262,9 +1290,76 @@
                 });
             });
 
-            // Keyboard quick open
+            // Drag logic on HEADER and HANDLE (mouse + touch)
+            let startY = 0, startH = 0, dragging = false;
+            function sheetMin(){ return Math.max(320, Math.round(window.innerHeight * 0.4)); }
+            function sheetMax(){ return window.innerHeight; }
+
+            function onDragStart(e){
+                // Do not start drag from close button
+                if (e.target.closest('.btn-close')) return;
+
+                dragging = true;
+                sheetEl.classList.add('is-dragging');
+                startY = (e.touches ? e.touches[0].clientY : e.clientY);
+                startH = sheetEl.getBoundingClientRect().height;
+
+                document.addEventListener('mousemove', onDragMove);
+                document.addEventListener('mouseup', onDragEnd);
+                document.addEventListener('touchmove', onDragMove, {passive:false});
+                document.addEventListener('touchend', onDragEnd);
+
+                // prevent text selection / scroll
+                if (e.cancelable) e.preventDefault();
+            }
+            function onDragMove(e){
+                if(!dragging) return;
+                const y = (e.touches ? e.touches[0].clientY : e.clientY);
+                const delta = startY - y; // drag up => positive
+                let next = startH + delta;
+                next = Math.max(sheetMin(), Math.min(sheetMax(), next));
+                setSheetHeight(next);
+                sheetEl.classList.toggle('is-full', next > sheetMax() - 16);
+                if(e.cancelable) e.preventDefault();
+            }
+            function onDragEnd(){
+                if(!dragging) return;
+                dragging = false;
+                sheetEl.classList.remove('is-dragging');
+
+                const current = sheetEl.getBoundingClientRect().height;
+                if(current > sheetMax() * 0.85){
+                    sheetEl.classList.add('is-full');
+                    setSheetHeight(sheetMax());
+                }else if(current < sheetMin() * 0.85){
+                    catOffcanvas?.hide();
+                }else{
+                    sheetEl.classList.remove('is-full');
+                    setSheetHeight(defaultSheetHeight());
+                }
+                document.removeEventListener('mousemove', onDragMove);
+                document.removeEventListener('mouseup', onDragEnd);
+                document.removeEventListener('touchmove', onDragMove);
+                document.removeEventListener('touchend', onDragEnd);
+            }
+
+            // Bind both header and handle
+            headerEl?.addEventListener('mousedown', onDragStart);
+            headerEl?.addEventListener('touchstart', onDragStart, {passive:false});
+            handle?.addEventListener('mousedown', onDragStart);
+            handle?.addEventListener('touchstart', onDragStart, {passive:false});
+
+            // Cleanup on hide
+            sheetEl?.addEventListener('hidden.bs.offcanvas', ()=>{
+                sheetEl.classList.remove('is-full','is-dragging');
+                sheetEl.style.removeProperty('--sheet-h');
+            });
+
+            // Quick keyboard open
             window.addEventListener('keydown', (e)=>{
                 if ((e.key==='c' || e.key==='C') && !e.target.closest('input,textarea')) {
+                    setSheetHeight(defaultSheetHeight());
+                    sheetEl.classList.remove('is-full');
                     catOffcanvas?.show();
                 }
             });

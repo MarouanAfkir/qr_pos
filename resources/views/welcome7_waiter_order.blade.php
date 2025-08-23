@@ -1,4 +1,4 @@
-{{-- resources/views/welcome.blade.php (Waiter mode with Client parity + per-restaurant storage) --}}
+{{-- resources/views/welcome.blade.php (Waiter mode – Glovo categories, refined UX, per-restaurant storage) --}}
 @php
     use Illuminate\Support\Str;
 
@@ -19,7 +19,7 @@
 
     $isRTL = in_array(strtolower($default_language), ['ar','he','fa','ur']);
 
-    /* Cart/Tray scoping per restaurant (prevents leaking between restaurants) */
+    /* Tray scoping per restaurant (prevents leaking between restaurants) */
     $restaurantId  = $restaurant['id'] ?? null;
     $restaurantKey = $restaurantId !== null ? ('r' . $restaurantId) : Str::slug($restaurantName);
 
@@ -65,10 +65,14 @@
             --danger:#ef4444;
             --success:#16a34a;
 
-            /* Header palette (restaurant-friendly, NOT brown): peach → mint */
-            --header-top:#FFE9D1;  /* peach */
-            --header-btm:#E8F5E9;  /* mint */
+            /* Header palette: peach → mint */
+            --header-top:#FFE9D1;
+            --header-btm:#E8F5E9;
             --header-border:#e3eee5;
+
+            /* Category UX helpers */
+            --cat-edge-pad: 44px;        /* space before first / after last card (mobile) */
+            --cat-fade-w:  36px;         /* gradient fade width under arrows (mobile) */
         }
 
         html { scroll-behavior:smooth }
@@ -123,10 +127,10 @@
         /* ===== STICKY TOOLS ===== */
         .sticky-tools{
             position:sticky; top:0; z-index:60;
-            background:rgba(255,255,255,.92);
+            background:rgba(255,255,255,.94);
             backdrop-filter: blur(6px);
             border-bottom:1px solid var(--chip-b);
-            padding:.45rem 0;
+            padding:.45rem 0 .5rem;
             margin-bottom:1.2rem;
         }
         .search-row{ display:flex; gap:.5rem; align-items:center; }
@@ -138,30 +142,32 @@
         #menuSearch::placeholder{color:#9b8f89}
         #menuSearch:focus{border-color:var(--brand-2); box-shadow:0 0 0 5px var(--ring); outline:0}
 
-        /* Inline Categories button (popup mode) */
-        .btn-cat-inline{
-            border:2px solid var(--chip-b);
-            background:var(--chip);
-            color:#6b4b2f;
-            border-radius:999px;
-            padding:.55rem .9rem;
-            font-weight:800;
-            display:inline-flex; align-items:center; gap:.45rem;
-            white-space:nowrap;
-            box-shadow:0 2px 8px rgba(0,0,0,.04);
-            transition:.15s;
-        }
-        .btn-cat-inline:hover{ transform:translateY(-1px); background:#fff7e6; box-shadow:0 6px 16px rgba(0,0,0,.08); }
-        .btn-cat-inline i{ font-size:.95rem; }
-
-        /* ===== CATEGORIES ===== */
+        /* ===== CATEGORIES (Glovo-like, refined) ===== */
         .categories-wrapper{position:relative}
-        .categories-scroll{
+
+        /* gradient fades under arrows (mobile only) */
+        .categories-wrapper::before,
+        .categories-wrapper::after{
+            content:""; position:absolute; top:0; bottom:0; width:var(--cat-fade-w);
+            pointer-events:none; z-index:4; opacity:1; transition:.15s;
+            background:linear-gradient(to {{ $isRTL ? 'left' : 'right' }}, rgba(255,255,255,.94), rgba(255,255,255,0));
+            display:none;
+        }
+        .categories-wrapper::after{
+            {{ $isRTL ? 'left' : 'right' }}:0;
+            transform:scaleX(-1); /* reuse same gradient */
+        }
+        .categories-wrapper::before{ {{ $isRTL ? 'right' : 'left' }}:0; }
+
+        .categories-wrapper.at-start::before{ opacity:0 }
+        .categories-wrapper.at-end::after{ opacity:0 }
+
+        .glovo-cats-scroll{
             display:flex !important;
             flex-wrap:nowrap !important;
-            gap:.5rem;
-            margin:.1rem 0 .3rem;
-            padding:0 1.2rem .4rem;
+            gap:.6rem;
+            margin:.2rem 0 .35rem;
+            padding:0 1.2rem .5rem;
             overflow-x:auto;
             overflow-y:hidden;
             -webkit-overflow-scrolling:touch;
@@ -170,19 +176,52 @@
             -ms-overflow-style: none;
             scrollbar-width: none;
         }
-        .categories-scroll::-webkit-scrollbar{ display:none; }
-        .categories-scroll .nav-item{flex:0 0 auto; scroll-snap-align:start}
-        .categories-scroll .nav-link{
-            padding:.5rem .95rem; font-size:.9rem; font-weight:800; color:#5a3d1b; white-space:nowrap;
-            background:#fff7ee; border:1px solid rgba(196,154,108,.45);
-            border-radius:14px; transition:.16s;
-        }
-        .categories-scroll .nav-link:hover{transform:translateY(-1px); box-shadow:0 4px 10px rgba(0,0,0,.06)}
-        .categories-scroll .nav-link.active{color:#000; background:#f6e3cf; border-color:transparent; box-shadow:0 3px 10px rgba(0,0,0,.08)}
+        .glovo-cats-scroll::-webkit-scrollbar{ display:none; }
+        .glovo-cats-scroll .nav-item{flex:0 0 auto; scroll-snap-align:start}
 
-        /* Arrow buttons (normal mode) */
+        /* Edge spacers so arrows never cover first/last */
+        .glovo-cats-scroll::before,
+        .glovo-cats-scroll::after{
+            content:""; display:block; flex:0 0 var(--cat-edge-pad);
+        }
+
+        .glovo-cats-scroll .cat-card{
+            display:flex; flex-direction:column; align-items:center; justify-content:center;
+            gap:.45rem; min-width:88px; padding:.6rem .7rem .7rem; border-radius:16px;
+            background:#fff; border:1px solid var(--chip-b); text-align:center;
+            box-shadow:0 2px 8px rgba(0,0,0,.04);
+            transition:box-shadow .16s ease; color:#1f2937; font-weight:800;
+
+            /* keep visible around edges when scrolled into view */
+            scroll-margin-inline: calc(var(--cat-edge-pad) + 6px);
+        }
+        /* remove vertical nudge to avoid clipping */
+        .glovo-cats-scroll .cat-card:hover{ box-shadow:0 10px 22px rgba(0,0,0,.08) }
+
+        .cat-icon{
+            width:54px; height:54px; border-radius:50%;
+            background:linear-gradient(135deg,#fff7ea,#fff);
+            border:1px solid var(--chip-b);
+            display:flex; align-items:center; justify-content:center;
+            overflow:hidden;
+        }
+        .cat-icon img{ width:100%; height:100%; object-fit:cover }
+        .cat-fallback{
+            font-size:1.05rem; font-weight:900; color:#6b4b2f;
+            text-transform:uppercase; letter-spacing:.3px;
+        }
+        .cat-label{ font-size:.82rem; line-height:1.1; max-width:86px; white-space:normal }
+
+        .glovo-cats-scroll .cat-card.active{
+            /* keep border size stable; use ring for emphasis */
+            border-color:var(--chip-b);
+            background:#fff9f2;
+            box-shadow:0 0 0 4px var(--ring);
+        }
+
+        /* Arrow buttons (mobile) */
         .cat-nav{
-            position:absolute; top:50%; transform:translateY(-50%); width:32px; height:32px; border-radius:50%;
+            position:absolute; top:50%; transform:translateY(-50%); width:36px; height:36px; border-radius:50%;
             display:flex; align-items:center; justify-content:center; background:#fff; border:1px solid var(--brand-2);
             box-shadow:0 2px 10px rgba(0,0,0,.08); color:#7a5200; font-size:.8rem; z-index:5
         }
@@ -190,43 +229,25 @@
         .cat-prev{{ $isRTL ? ':right' : ':left' }}:.25rem;
         .cat-next{{ $isRTL ? ':left' : ':right' }}:.25rem;
 
-        /* ≥576px: grid layout, hide arrows */
+        /* Desktop: center row; hide arrows & fades; reduce extra padding */
         @media(min-width:576px){
-            .categories-scroll{
+            .glovo-cats-scroll{
                 overflow:visible;
-                display:grid !important;
-                grid-template-columns: repeat(auto-fit, minmax(135px, max-content));
                 justify-content:center;
-                gap:.6rem;
+                gap:.7rem;
                 padding:0;
                 margin-left:auto; margin-right:auto;
                 max-width:1100px;
             }
             .cat-nav{display:none}
+            .categories-wrapper::before,
+            .categories-wrapper::after{ display:none }
+            .glovo-cats-scroll::before,
+            .glovo-cats-scroll::after{ content:none }
         }
-
-        /* ===== CATEGORY SHEET (popup mode) ===== */
-        .category-sheet{
-            height:min(70vh, 520px);
-            border-top-left-radius:16px; border-top-right-radius:16px;
-            box-shadow:0 -18px 40px rgba(0,0,0,.18);
-        }
-        .category-sheet .handle{
-            width:42px; height:5px; border-radius:999px; background:#ddd; margin:.4rem auto 0;
-        }
-        .cat-grid{
-            display:grid; grid-template-columns: repeat(auto-fill, minmax(150px,1fr));
-            gap:.6rem;
-        }
-        .cat-tile{
-            display:flex; align-items:center; justify-content:space-between; gap:.6rem;
-            background:#fff; border:1px solid var(--chip-b); border-radius:.9rem; padding:.7rem .8rem;
-            font-weight:700; color:#5a3d1b; transition:.15s; cursor:pointer;
-        }
-        .cat-tile:hover{transform:translateY(-2px); box-shadow:0 8px 18px rgba(0,0,0,.08)}
-        .cat-tile .qty{
-            background:#fff7ee; border:1px solid var(--chip-b); color:#6b4b2f;
-            font-size:.78rem; border-radius:999px; padding:.1rem .45rem;
+        @media(max-width:575.98px){
+            .categories-wrapper::before,
+            .categories-wrapper::after{ display:block }
         }
 
         /* ===== ITEMS ===== */
@@ -258,7 +279,6 @@
         #itemModal .modal-title{font-weight:800; color:#5f3b0e; font-size:1.25rem}
         #itemModal .modal-body{padding:1rem 1rem 1.15rem}
 
-        /* Mobile-centered modal content */
         @media (max-width:575.98px){
             #itemModal .modal-body{ text-align:center; }
             #itemModal img{ margin:0 auto; }
@@ -412,22 +432,45 @@
                 <div class="col-12">
                     <div class="categories-wrapper">
                         @if(!$categoryPopup)
-                            <button type="button" class="cat-nav cat-prev" aria-label="{{ __('Scroll categories') }}"><i class="fa-solid fa-chevron-{{ $isRTL ? 'right' : 'left' }}"></i></button>
-                            <ul class="nav categories-scroll justify-content-center" id="pills-tab" role="tablist" aria-label="{{ __('Categories') }}">
+                            <button type="button" class="cat-nav cat-prev" aria-label="{{ __('Scroll categories') }}">
+                                <i class="fa-solid fa-chevron-{{ $isRTL ? 'right' : 'left' }}"></i>
+                            </button>
+
+                            <ul class="nav glovo-cats-scroll justify-content-center" id="pills-tab" role="tablist" aria-label="{{ __('Categories') }}">
                                 @foreach ($categories as $cat)
-                                    @php $slug = Str::slug($cat['name']); @endphp
-                                    <li class="nav-item">
-                                        <button class="nav-link {{ $loop->first ? 'active' : '' }}"
-                                                id="pills-{{ $slug }}-tab" data-bs-toggle="pill"
-                                                data-bs-target="#pills-{{ $slug }}" type="button" role="tab"
-                                                aria-controls="pills-{{ $slug }}"
-                                                aria-selected="{{ $loop->first ? 'true' : 'false' }}">
-                                            {{ $cat['name'] }}
+                                    @php
+                                        $slug     = Str::slug($cat['name']);
+                                        $thumb    = $cat['image'] ?? ($cat['items'][0]['image'] ?? null);
+                                        $initials = Str::upper(Str::substr(trim($cat['name']), 0, 2));
+                                    @endphp
+                                    <li class="nav-item" role="presentation">
+                                        <button
+                                            class="nav-link cat-card {{ $loop->first ? 'active' : '' }}"
+                                            id="pills-{{ $slug }}-tab"
+                                            data-bs-toggle="pill"
+                                            data-bs-target="#pills-{{ $slug }}"
+                                            type="button"
+                                            role="tab"
+                                            aria-controls="pills-{{ $slug }}"
+                                            aria-selected="{{ $loop->first ? 'true' : 'false' }}"
+                                            title="{{ $cat['name'] }}"
+                                        >
+                                            <span class="cat-icon">
+                                                @if($thumb)
+                                                    <img src="{{ $thumb }}" alt="{{ $cat['name'] }}">
+                                                @else
+                                                    <span class="cat-fallback">{{ $initials }}</span>
+                                                @endif
+                                            </span>
+                                            <span class="cat-label">{{ $cat['name'] }}</span>
                                         </button>
                                     </li>
                                 @endforeach
                             </ul>
-                            <button type="button" class="cat-nav cat-next" aria-label="{{ __('Scroll categories') }}"><i class="fa-solid fa-chevron-{{ $isRTL ? 'left' : 'right' }}"></i></button>
+
+                            <button type="button" class="cat-nav cat-next" aria-label="{{ __('Scroll categories') }}">
+                                <i class="fa-solid fa-chevron-{{ $isRTL ? 'left' : 'right' }}"></i>
+                            </button>
                         @endif
                     </div>
                 </div>
@@ -684,27 +727,57 @@
         function escapeRegExp(s){ return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'); }
         function highlight(text, q){ if(!q) return text; const re = new RegExp(`(${escapeRegExp(q)})`,'ig'); return text.replace(re,'<mark>$1</mark>'); }
 
-        /* ===== Category arrows (normal mode) ===== */
-        const catStrip = document.querySelector('.categories-scroll');
+        /* ===== Category strip & arrows ===== */
+        const catWrap = document.querySelector('.categories-wrapper');
+        const catStrip = document.querySelector('.glovo-cats-scroll');
         const prevBtn  = document.querySelector('.cat-prev');
         const nextBtn  = document.querySelector('.cat-next');
+
+        function setWrapFades() {
+            if(!catStrip || !catWrap) return;
+            const max = catStrip.scrollWidth - catStrip.clientWidth - 1;
+            const atStart = catStrip.scrollLeft <= 0;
+            const atEnd   = catStrip.scrollLeft >= max;
+            catWrap.classList.toggle('at-start', atStart);
+            catWrap.classList.toggle('at-end',   atEnd);
+        }
         function updateArrows() {
             if (!catStrip) return;
             const max = catStrip.scrollWidth - catStrip.clientWidth - 1;
             prevBtn?.classList.toggle('disabled', catStrip.scrollLeft <= 0);
             nextBtn?.classList.toggle('disabled', catStrip.scrollLeft >= max);
+            setWrapFades();
         }
-        prevBtn?.addEventListener('click', () => catStrip.scrollBy({ left: -260, behavior: 'smooth' }));
-        nextBtn?.addEventListener('click', () => catStrip.scrollBy({ left:  260, behavior: 'smooth' }));
+        prevBtn?.addEventListener('click', () => catStrip.scrollBy({ left: {{ $isRTL ? 260 : -260 }}, behavior: 'smooth' }));
+        nextBtn?.addEventListener('click', () => catStrip.scrollBy({ left: {{ $isRTL ? -260 : 260 }}, behavior: 'smooth' }));
         catStrip?.addEventListener('scroll', updateArrows);
         window.addEventListener('resize', updateArrows);
         updateArrows();
 
-        /* Scroll active pill into view (normal mode) */
-        document.querySelectorAll('#pills-tab button[data-bs-toggle="pill"]').forEach(btn => {
+        /* Keep selected cat card in view + keep content under sticky header */
+        const stickyTools = document.querySelector('.sticky-tools');
+        function scrollMenuUnderSticky(){
+            const section = document.querySelector('.food-menu-section');
+            if(!section || !stickyTools) return;
+            const anchor = section.getBoundingClientRect().top + window.scrollY;
+            const targetY = Math.max(0, anchor - stickyTools.offsetHeight - 8);
+            window.scrollTo({ top: targetY, behavior:'smooth' });
+        }
+        document.querySelectorAll('#pills-tab .cat-card[data-bs-toggle="pill"]').forEach(btn => {
             btn.addEventListener('shown.bs.tab', e => {
-                e.target.scrollIntoView({ behavior:'smooth', inline:'center', block:'nearest' });
+                e.target.scrollIntoView({ behavior:'smooth', inline:'center' });
+                scrollMenuUnderSticky();
             });
+        });
+
+        /* Keyboard helpers: arrows to scroll categories if focus not in input */
+        window.addEventListener('keydown', (e)=>{
+            if (e.target.closest('input,textarea,select,[contenteditable="true"]')) return;
+            if (e.key === 'ArrowLeft'){
+                catStrip?.scrollBy({ left: {{ $isRTL ? 160 : -160 }}, behavior:'smooth' });
+            } else if (e.key === 'ArrowRight'){
+                catStrip?.scrollBy({ left: {{ $isRTL ? -160 : 160 }}, behavior:'smooth' });
+            }
         });
 
         /* Back to top */
@@ -725,7 +798,7 @@
                 $panes.removeClass('d-none');
                 return;
             }
-            $pills.addClass('d-none'); // safe if not present
+            $pills.addClass('d-none');
             $panes.addClass('d-none');
             $res.removeClass('d-none');
 
@@ -1235,9 +1308,8 @@
                 const target = document.getElementById('pills-' + slug);
                 if (target) target.classList.add('show','active');
 
-                // Scroll a bit below sticky tools for context
-                const y = document.querySelector('.food-menu-section')?.getBoundingClientRect().top + window.scrollY - 60;
-                if (!isNaN(y)) window.scrollTo({ top: y, behavior: 'smooth' });
+                // Scroll below sticky tools
+                scrollMenuUnderSticky();
             }
 
             openBtn?.addEventListener('click', () => {

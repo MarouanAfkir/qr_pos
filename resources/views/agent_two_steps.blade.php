@@ -1,4 +1,4 @@
-{{-- resources/views/client.blade.php --}}
+{{-- resources/views/agent_two_step.blade.php --}}
 @php
     use Illuminate\Support\Str;
 
@@ -14,7 +14,7 @@
     $tagline           = $restaurant['settings']['tagline'] ?? 'Fresh • Local • Delicious';
 
     $rawMenuName = trim($menu['name'] ?? '');
-    $menuTitle   = $rawMenuName && $rawMenuName !== $restaurantName ? $rawMenuName : __('Our Menu');
+    $menuTitle   = $rawMenuName && $rawMenuName !== $restaurantName ? $rawMenuName : __('Partner Ordering');
     $currency    = ' DH';
 
     $isRTL = in_array(strtolower($default_language), ['ar','he','fa','ur']);
@@ -23,11 +23,8 @@
     $restaurantId  = $restaurant['id'] ?? null;
     $restaurantKey = $restaurantId !== null ? ('r' . $restaurantId) : Str::slug($restaurantName);
 
-    /* Category popup mode via query ?category=popup */
-    $categoryPopup = strtolower((string)request('category')) === 'popup';
-
-    /* WhatsApp number: strip non-digits from phone1 (customize if you store WhatsApp elsewhere) */
-    $whatsappNumber = preg_replace('/\D+/', '', (string)($phone1 ?? ''));
+    /* Optional deep-link: ?cat=slug */
+    $initialCat = Str::slug((string) request('cat', ''));
 @endphp
 <!DOCTYPE html>
 <html lang="{{ $default_language }}" dir="{{ $isRTL ? 'rtl' : 'ltr' }}">
@@ -36,14 +33,14 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ $restaurantName }} – {{ __('Client Order') }}</title>
+    <title>{{ $restaurantName }} – {{ __('Delivery Partner (Two-step)') }}</title>
 
     <!-- Assets -->
     <link rel="shortcut icon" href="{{ asset('assets/img/favicon.png') }}">
     <link rel="stylesheet" href="{{ asset('assets/css/bootstrap.min.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/css/all.min.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/css/main.css') }}">
-    <!-- QR Code libraries -->
+    <!-- QR Code -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
 
     <!-- Fonts -->
@@ -51,19 +48,18 @@
 
     <style>
         :root{
-            --brand:#6F4E37;      /* Espresso (used for prices & CTAs) */
-            --brand-2:#C49A6C;    /* Latte */
-            --cream:#FBF7F2;      /* Cream bg */
-            --ink:#1f2937;        /* Text */
+            --brand:#6F4E37;
+            --brand-2:#C49A6C;
+            --cream:#FBF7F2;
+            --ink:#1f2937;
             --muted:#6b7280;
             --chip:#fff7ea;
             --chip-b:#f2e4d3;
             --ring:rgba(196,154,108,.25);
-            --accent:#facc15;     /* Gold accent */
+            --accent:#facc15;
             --danger:#ef4444;
             --success:#16a34a;
 
-            /* Header palette: peach → mint */
             --header-top:#FFE9D1;
             --header-btm:#E8F5E9;
             --header-border:#e3eee5;
@@ -87,7 +83,6 @@
         }
         .hero-inner { max-width:1100px; margin:0 auto; position:relative; }
 
-        /* Lang switcher */
         .hero-tools { position:absolute; top:.6rem; {{ $isRTL ? 'left' : 'right' }}:.6rem; display:flex; gap:.5rem; }
         .btn-pill {
             background:#fff;
@@ -97,15 +92,11 @@
             transition:.2s; box-shadow:0 2px 6px rgba(0,0,0,.05);
         }
         .btn-pill:hover { background:#fff9f2; }
-        .hero .dropdown-menu {
-            border:none; border-radius:.75rem; padding:.35rem; min-width:12rem;
-            background:#fff; box-shadow:0 16px 36px rgba(0,0,0,.12);
-        }
+        .hero .dropdown-menu { border:none; border-radius:.75rem; padding:.35rem; min-width:12rem; background:#fff; box-shadow:0 16px 36px rgba(0,0,0,.12); }
         .hero .dropdown-item { border-radius:.5rem; padding:.5rem .75rem; color:#111; }
         .hero .dropdown-item:hover { background:rgba(196,154,108,.12) }
         .hero .dropdown-item.active { background:linear-gradient(135deg,#fde7c7,#fff); font-weight:800 }
 
-        /* Logo & meta */
         .restaurant-logo-wrapper{
             width:124px;height:124px;margin:0 auto .55rem;border-radius:50%;
             background:#fff;display:flex;align-items:center;justify-content:center;
@@ -127,6 +118,7 @@
             padding:.45rem 0;
             margin-bottom:1.2rem;
         }
+        /* Search */
         .search-row{ display:flex; gap:.5rem; align-items:center; }
         #menuSearch{
             border-radius:999px; padding:.6rem 1rem; font-size:.98rem;
@@ -135,74 +127,37 @@
         #menuSearch::placeholder{color:#9b8f89}
         #menuSearch:focus{border-color:var(--brand-2); box-shadow:0 0 0 5px var(--ring); outline:0}
 
-        .btn-cat-inline{
-            border:2px solid var(--chip-b);
-            background:var(--chip);
-            color:#6b4b2f;
-            border-radius:999px;
-            padding:.55rem .9rem;
-            font-weight:800;
+        /* ===== CATEGORY GRID (first view) ===== */
+        .cat-grid{
+            display:grid; grid-template-columns: repeat(auto-fill, minmax(150px,1fr));
+            gap:.6rem;
+        }
+        .cat-card{
+            display:flex; align-items:center; justify-content:space-between; gap:.6rem;
+            background:#fff; border:1px solid var(--chip-b); border-radius:.9rem; padding:.8rem .9rem;
+            font-weight:800; color:#5a3d1b; transition:.15s; cursor:pointer;
+        }
+        .cat-card:hover{transform:translateY(-2px); box-shadow:0 8px 18px rgba(0,0,0,.08)}
+        .cat-card .qty{
+            background:#fff7ee; border:1px solid var(--chip-b); color:#6b4b2f;
+            font-size:.78rem; border-radius:999px; padding:.1rem .45rem;
+        }
+
+        /* ===== ITEMS VIEW (second view) ===== */
+        .items-header{
+            position:sticky; top:56px; /* below global sticky tools */
+            z-index:40; background:#fff; border:1px solid #efe6db; border-radius:12px;
+            padding:.55rem .7rem; display:flex; align-items:center; justify-content:space-between; gap:.5rem;
+            box-shadow:0 8px 22px rgba(0,0,0,.06);
+        }
+        .btn-back{
             display:inline-flex; align-items:center; gap:.45rem;
-            white-space:nowrap;
-            box-shadow:0 2px 8px rgba(0,0,0,.04);
-            transition:.15s;
+            background:#fff7ee; border:1px solid var(--chip-b); border-radius:999px; padding:.4rem .7rem;
+            font-weight:800; color:#6b4b2f;
         }
-        .btn-cat-inline:hover{ transform:translateY(-1px); background:#fff7e6; box-shadow:0 6px 16px rgba(0,0,0,.08); }
-        .btn-cat-inline i{ font-size:.95rem; }
+        .current-cat{ font-weight:800; }
 
-        /* ===== CATEGORIES ===== */
-        .categories-wrapper{position:relative}
-        .categories-scroll{
-            display:flex !important;
-            flex-wrap:nowrap !important;
-            gap:.5rem;
-            margin:.1rem 0 .3rem;
-            padding:0 1.2rem .4rem;
-            overflow-x:auto;
-            overflow-y:hidden;
-            -webkit-overflow-scrolling:touch;
-            scroll-snap-type:x mandatory;
-            touch-action:pan-x;
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
-        .categories-scroll::-webkit-scrollbar{ display:none; }
-        .categories-scroll .nav-item{flex:0 0 auto; scroll-snap-align:start}
-        .categories-scroll .nav-link{
-            padding:.5rem .95rem; font-size:.9rem; font-weight:800; color:#5a3d1b; white-space:nowrap;
-            background:#fff7ee; border:1px solid rgba(196,154,108,.45);
-            border-radius:14px; transition:.16s;
-        }
-        .categories-scroll .nav-link:hover{transform:translateY(-1px); box-shadow:0 4px 10px rgba(0,0,0,.06)}
-        .categories-scroll .nav-link.active{color:#000; background:#f6e3cf; border-color:transparent; box-shadow:0 3px 10px rgba(0,0,0,.08)}
-        .cat-nav{
-            position:absolute; top:50%; transform:translateY(-50%); width:32px; height:32px; border-radius:50%;
-            display:flex; align-items:center; justify-content:center; background:#fff; border:1px solid var(--brand-2);
-            box-shadow:0 2px 10px rgba(0,0,0,.08); color:#7a5200; font-size:.8rem; z-index:5
-        }
-        .cat-nav.disabled{opacity:0; pointer-events:none}
-        .cat-prev{{ $isRTL ? ':right' : ':left' }}:.25rem;
-        .cat-next{{ $isRTL ? ':left' : ':right' }}:.25rem;
-        @media(min-width:576px){
-            .categories-scroll{
-                overflow:visible;
-                display:grid !important;
-                grid-template-columns: repeat(auto-fit, minmax(135px, max-content));
-                justify-content:center;
-                gap:.6rem;
-                padding:0;
-                margin-left:auto; margin-right:auto;
-                max-width:1100px;
-            }
-            .cat-nav{display:none}
-        }
-
-        /* ===== ITEMS ===== */
-        .food-menu-section.section-padding{padding-top:0!important}
-        .food-menu-tab-wrapper { padding-top:.2rem !important; }
-        .title-area{padding-top:1rem; margin:.1rem 0 .5rem;}
-        .sub-title{font-weight:800;color:#7a5200;letter-spacing:.2px}
-
+        /* ===== ITEMS LIST ===== */
         .single-menu-items{
             cursor:pointer; display:flex; gap:.9rem; padding:.85rem 1rem; margin-bottom:.85rem; background:#fff;
             border-radius:1rem; border:1px solid #efe6db; box-shadow:0 1px 3px rgba(0,0,0,.03); transition:.18s
@@ -216,12 +171,9 @@
         .price-wrap del{color:#9ca3af; margin-inline-end:.35rem}
         .save-badge{background:#dcfce7; color:#065f46; border-radius:6px; font-size:.72rem; padding:.1rem .35rem; margin-inline-start:.35rem; font-weight:700}
 
-        /* ===== MODAL (option CARDS) ===== */
+        /* ===== MODAL (options UI) ===== */
         #itemModal .modal-content{border:0; border-radius:1rem; box-shadow:0 10px 36px rgba(0,0,0,.18)}
-        #itemModal .modal-header{
-            background:#fff3cf; border-bottom:none; border-top-left-radius:1rem; border-top-right-radius:1rem;
-            padding:.7rem 1rem;
-        }
+        #itemModal .modal-header{background:#fff3cf; border-bottom:none; border-top-left-radius:1rem; border-top-right-radius:1rem; padding:.7rem 1rem;}
         #itemModal .modal-title{font-weight:800; color:#5f3b0e; font-size:1.25rem}
         #itemModal .modal-body{padding:1rem 1rem 1.15rem}
         @media (max-width:575.98px){
@@ -232,10 +184,8 @@
         }
         #itemModal img{width:120px; height:120px; object-fit:cover; border-radius:.8rem; box-shadow:0 6px 16px rgba(0,0,0,.1)}
         .lead-price{font-weight:800; color:var(--brand)}
-
-        /* Uppercase variations & choices */
         .v-group{margin:.85rem 0}
-        .v-title{font-weight:800; margin-bottom:.5rem; text-transform:uppercase; letter-spacing:.3px;}
+        .v-title{font-weight:800; margin-bottom:.5rem; text-transform:uppercase; letter-spacing:.4px;}
         .options-grid{ display:grid; gap:.55rem; grid-template-columns: repeat(auto-fill,minmax(140px,1fr)); }
         .option-card{ display:block; user-select:none; cursor:pointer; background:#fff; border:2px solid #f2e4d3; border-radius:.85rem; padding:.6rem .65rem; transition:.15s; height:100%; position:relative; }
         .option-card.disabled{opacity:.45; cursor:not-allowed}
@@ -258,7 +208,7 @@
         .btn-primary-cta:hover{background:#5c3f2e}
         .req-hint{font-size:.85rem; color:#b45309; display:none}
 
-        /* ===== CLIENT CART ===== */
+        /* ===== CART / CONFIRM ===== */
         .cart-toggle{
             position:fixed; {{ $isRTL ? 'left' : 'right' }}:16px; bottom:16px; width:56px; height:56px; border-radius:50%;
             background:var(--brand); color:#fff; border:none; display:flex; align-items:center; justify-content:center;
@@ -285,15 +235,11 @@
         .cart-footer{display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:.5rem; padding:.65rem .9rem; background:#fffaf3; border-top:1px solid #eee2d4}
         .btn-confirm{background:var(--success); color:#fff; border:none; padding:.5rem .9rem; border-radius:.6rem; font-weight:800}
 
-        /* ===== CONFIRMATION / CODES MODAL ===== */
+        /* ===== CONFIRM / QR ===== */
         #confirmModal .modal-content{border:0;border-radius:1rem}
-        #confirmModal .modal-header{background:#eaf7ea;border:0}
-        #qrBox{
-            display:flex; align-items:center; justify-content:center; background:#fff;
-            border:1px dashed #d1d5db; border-radius:.75rem; padding:1rem;
-        }
-        #qrBox{ min-height:220px }
-        #orderCodeText{ font-weight:800; letter-spacing:.5px; }
+        #confirmModal .modal-header{background:#fff1e6;border:0}
+        #qrBox{display:flex; align-items:center; justify-content:center; background:#fff; border:1px dashed #d1d5db; border-radius:.75rem; padding:1rem; min-height:220px}
+        #qrActions .btn{border-radius:.6rem}
 
         /* Back to top */
         #toTop{position:fixed; {{ $isRTL ? 'left' : 'right' }}:90px; bottom:18px; width:42px;height:42px;border-radius:50%;background:var(--accent);color:#222;border:none;box-shadow:0 8px 22px rgba(0,0,0,.18);display:none;align-items:center;justify-content:center;z-index:60}
@@ -306,7 +252,6 @@
     {{-- ===== HERO ===== --}}
     <section class="hero">
         <div class="hero-inner">
-
             {{-- Lang switcher --}}
             <div class="hero-tools">
                 <div class="dropdown">
@@ -349,141 +294,134 @@
         </div>
     </section>
 
-    {{-- ===== Sticky tools (search + categories) ===== --}}
+    {{-- ===== Sticky tools: search ===== --}}
     <div class="sticky-tools">
         <div class="container">
             <div class="row g-2 align-items-center justify-content-center">
                 <div class="col-12 col-md-8">
                     <div class="search-row">
                         <input id="menuSearch" type="search" class="form-control" placeholder="{{ __('Search menu…') }}" aria-label="{{ __('Search menu…') }}">
-                        @if($categoryPopup)
-                            <button type="button" id="openCategories" class="btn-cat-inline" title="{{ __('Categories') }}" aria-label="{{ __('Open categories') }}" aria-haspopup="dialog" aria-controls="categoriesSheet">
-                                <i class="fa-solid fa-list-ul"></i>
-                                <span class="d-none d-sm-inline">{{ __('Categories') }}</span>
-                            </button>
-                        @endif
-                    </div>
-                </div>
-
-                <div class="col-12">
-                    <div class="categories-wrapper">
-                        @if(!$categoryPopup)
-                            <button type="button" class="cat-nav cat-prev" aria-label="{{ __('Scroll categories') }}"><i class="fa-solid fa-chevron-{{ $isRTL ? 'right' : 'left' }}"></i></button>
-                            <ul class="nav categories-scroll justify-content-center" id="pills-tab" role="tablist" aria-label="{{ __('Categories') }}">
-                                @foreach ($categories as $cat)
-                                    @php $slug = Str::slug($cat['name']); @endphp
-                                    <li class="nav-item">
-                                        <button class="nav-link {{ $loop->first ? 'active' : '' }}"
-                                                id="pills-{{ $slug }}-tab" data-bs-toggle="pill"
-                                                data-bs-target="#pills-{{ $slug }}" type="button" role="tab"
-                                                aria-controls="pills-{{ $slug }}"
-                                                aria-selected="{{ $loop->first ? 'true' : 'false' }}">
-                                            {{ $cat['name'] }}
-                                        </button>
-                                    </li>
-                                @endforeach
-                            </ul>
-                            <button type="button" class="cat-nav cat-next" aria-label="{{ __('Scroll categories') }}"><i class="fa-solid fa-chevron-{{ $isRTL ? 'left' : 'right' }}"></i></button>
-                        @endif
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    {{-- ===== Menu ===== --}}
-    <section class="food-menu-section fix section-padding">
-        <div class="food-menu-wrapper style1">
-            <div class="container ">
-                <div class="food-menu-tab-wrapper style-bg px-1 px-md-5">
+    {{-- ===== MAIN: two-step flow ===== --}}
+    <section class="section-padding pt-0">
+        <div class="container">
 
-                    <!-- title -->
-                    <div class="title-area">
-                        <div class="sub-title text-center">
-                            <img class="me-1" src="{{ asset('assets/img/icon/titleIcon.svg') }}" alt="">
-                            {{ $menuTitle }}
-                            <img class="ms-1" src="{{ asset('assets/img/icon/titleIcon.svg') }}" alt="">
-                        </div>
+            {{-- View A: categories grid --}}
+            <div id="viewCategories">
+                <div class="mb-3">
+                    <div class="sub-title text-center">
+                        <img class="me-1" src="{{ asset('assets/img/icon/titleIcon.svg') }}" alt="">
+                        {{ __('Choose a Category') }}
+                        <img class="ms-1" src="{{ asset('assets/img/icon/titleIcon.svg') }}" alt="">
                     </div>
+                </div>
+                <div class="mb-3">
+                    <input id="catFilter" type="search" class="form-control form-control-sm" placeholder="{{ __('Filter categories…') }}" aria-label="{{ __('Filter categories…') }}">
+                </div>
+                <div class="cat-grid" role="listbox" aria-label="{{ __('Categories') }}">
+                    @foreach($categories as $cat)
+                        @php
+                            $slug = Str::slug($cat['name']);
+                            $count = is_countable($cat['items'] ?? null) ? count($cat['items']) : 0;
+                        @endphp
+                        <button class="cat-card" type="button"
+                                data-slug="{{ $slug }}"
+                                data-name="{{ Str::lower($cat['name']) }}"
+                                role="option" aria-selected="false">
+                            <span class="name text-truncate">{{ $cat['name'] }}</span>
+                            <span class="qty">{{ $count }}</span>
+                        </button>
+                    @endforeach
+                </div>
+            </div>
 
-                    <div class="food-menu-tab">
-                        <div class="tab-content" id="pills-tabContent">
-                            @foreach ($categories as $cat)
-                                @php
-                                    $slug    = Str::slug($cat['name']);
-                                    $columns = array_chunk($cat['items'], ceil(max(count($cat['items']), 1) / 2));
-                                @endphp
-                                <div class="tab-pane fade {{ $loop->first ? 'show active' : '' }}"
-                                     id="pills-{{ $slug }}" role="tabpanel" aria-labelledby="pills-{{ $slug }}-tab">
-                                    <div class="row gx-4">
-                                        @foreach ($columns as $colItems)
-                                            <div class="col-lg-6 col-md-6">
-                                                @foreach ($colItems as $item)
-                                                    @php
-                                                        $price      = number_format($item['price'], 2);
-                                                        $salePrice  = $item['sale_price'];
-                                                        $img        = $item['image'] ?? asset('assets/img/menu/menuThumb1_1.png');
-                                                        $priceHtml  = $salePrice
-                                                            ? '<del>' . $price . $currency . '</del> ' .
-                                                              '<span class=&quot;fw-semibold&quot; style=&quot;color:var(--brand)&quot;>' . number_format($salePrice, 2) . $currency . '</span>'
-                                                            : '<span class=&quot;fw-semibold&quot; style=&quot;color:var(--brand)&quot;>' . $price . $currency . '</span>';
+            {{-- View B: items of one category --}}
+            <div id="viewItems" class="d-none" aria-live="polite">
+                <div class="items-header mb-3">
+                    <button class="btn-back" id="backToCats"><i class="fa-solid fa-arrow-{{ $isRTL ? 'right' : 'left' }}"></i><span>{{ __('Back to Categories') }}</span></button>
+                    <div class="current-cat" id="currentCatTitle">—</div>
+                    <div style="width:48px;"></div>
+                </div>
 
-                                                        $base       = $salePrice ?: $item['price'];
-                                                        $ingredients = $item['ingredients'] ?? '';
-                                                        $chips = array_filter(array_map('trim', explode(',', (string)$ingredients)));
-                                                        $savings = $salePrice ? max(0, $item['price'] - $salePrice) : 0;
+                {{-- Pre-render item panes per category; JS toggles which one shows --}}
+                @foreach ($categories as $cat)
+                    @php
+                        $slug    = Str::slug($cat['name']);
+                        $columns = array_chunk($cat['items'], ceil(max(count($cat['items']), 1) / 2));
+                    @endphp
+                    <div class="category-pane d-none" id="cat-{{ $slug }}">
+                        <div class="row gx-4">
+                            @foreach ($columns as $colItems)
+                                <div class="col-lg-6 col-md-6">
+                                    @foreach ($colItems as $item)
+                                        @php
+                                            $price      = number_format($item['price'], 2);
+                                            $salePrice  = $item['sale_price'];
+                                            $img        = $item['image'] ?? asset('assets/img/menu/menuThumb1_1.png');
+                                            $priceHtml  = $salePrice
+                                                ? '<del>' . $price . $currency . '</del> ' .
+                                                  '<span class=&quot;fw-semibold&quot; style=&quot;color:var(--brand)&quot;>' . number_format($salePrice, 2) . $currency . '</span>'
+                                                : '<span class=&quot;fw-semibold&quot; style=&quot;color:var(--brand)&quot;>' . $price . $currency . '</span>';
 
-                                                        $minQty = $item['min_qty'] ?? 1;
-                                                        $maxQty = $item['max_qty'] ?? null;
-                                                    @endphp
-                                                    <div class="single-menu-items"
-                                                         role="button" tabindex="0"
-                                                         data-name="{{ e($item['name']) }}"
-                                                         data-desc="{{ e($item['description'] ?? '') }}"
-                                                         data-img="{{ $img }}"
-                                                         data-price="{!! $priceHtml !!}"
-                                                         data-base="{{ number_format($base,2,'.','') }}"
-                                                         data-minqty="{{ (int)$minQty }}"
-                                                         data-maxqty="{{ $maxQty ? (int)$maxQty : '' }}"
-                                                         data-ingredients="{{ e($ingredients) }}"
-                                                         data-variations='@json($item["variations"] ?? [])'>
-                                                        <div class="menu-item-thumb">
-                                                            <img src="{{ $img }}" alt="{{ $item['name'] }}" loading="lazy">
-                                                        </div>
-                                                        <div class="menu-content flex-grow-1">
-                                                            <div class="d-flex align-items-start justify-content-between">
-                                                                <h3 class="fw-semibold">{{ $item['name'] }}</h3>
-                                                                <div class="price-wrap text-nowrap ms-2">
-                                                                    {!! $priceHtml !!}
-                                                                    @if($savings>0)
-                                                                        <span class="save-badge">{{ __('Save') }} {{ number_format($savings,2).$currency }}</span>
-                                                                    @endif
-                                                                </div>
-                                                            </div>
-                                                            @if ($item['description'])
-                                                                <p class="mb-1 small text-muted">{{ $item['description'] }}</p>
-                                                            @endif
-                                                            @if(count($chips))
-                                                                <div class="chips">
-                                                                    @foreach($chips as $c)
-                                                                        <span class="chip">{{ $c }}</span>
-                                                                    @endforeach
-                                                                </div>
-                                                            @endif
-                                                        </div>
-                                                    </div>
-                                                @endforeach
+                                            $base       = $salePrice ?: $item['price'];
+                                            $ingredients = $item['ingredients'] ?? '';
+                                            $chips = array_filter(array_map('trim', explode(',', (string)$ingredients)));
+                                            $savings = $salePrice ? max(0, $item['price'] - $salePrice) : 0;
+
+                                            $minQty = $item['min_qty'] ?? 1;
+                                            $maxQty = $item['max_qty'] ?? null;
+                                        @endphp
+                                        <div class="single-menu-items"
+                                             role="button" tabindex="0"
+                                             data-name="{{ e($item['name']) }}"
+                                             data-desc="{{ e($item['description'] ?? '') }}"
+                                             data-img="{{ $img }}"
+                                             data-price="{!! $priceHtml !!}"
+                                             data-base="{{ number_format($base,2,'.','') }}"
+                                             data-minqty="{{ (int)$minQty }}"
+                                             data-maxqty="{{ $maxQty ? (int)$maxQty : '' }}"
+                                             data-ingredients="{{ e($ingredients) }}"
+                                             data-variations='@json($item["variations"] ?? [])'>
+                                            <div class="menu-item-thumb">
+                                                <img src="{{ $img }}" alt="{{ $item['name'] }}" loading="lazy">
                                             </div>
-                                        @endforeach
-                                    </div>
+                                            <div class="menu-content flex-grow-1">
+                                                <div class="d-flex align-items-start justify-content-between">
+                                                    <h3 class="fw-semibold">{{ $item['name'] }}</h3>
+                                                    <div class="price-wrap text-nowrap ms-2">
+                                                        {!! $priceHtml !!}
+                                                        @if($savings>0)
+                                                            <span class="save-badge">{{ __('Save') }} {{ number_format($savings,2).$currency }}</span>
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                                @if ($item['description'])
+                                                    <p class="mb-1 small text-muted">{{ $item['description'] }}</p>
+                                                @endif
+                                                @if(count($chips))
+                                                    <div class="chips">
+                                                        @foreach($chips as $c)
+                                                            <span class="chip">{{ $c }}</span>
+                                                        @endforeach
+                                                    </div>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    @endforeach
                                 </div>
                             @endforeach
                         </div>
-
-                        <div id="searchResults" class="row gx-4 d-none" aria-live="polite"></div>
                     </div>
-                </div>
+                @endforeach
+
+                <div id="searchResults" class="row gx-4 d-none" aria-live="polite"></div>
             </div>
+
         </div>
     </section>
 
@@ -493,14 +431,14 @@
             <p class="mb-2">&copy; {{ now()->year }} <a href="#">{{ $restaurantName }}</a>.
                 {{ __('All rights reserved.') }}</p>
             <p class="mb-0 small">{{ __('Crafted with') }} <i class="fa-solid fa-heart" style="color:var(--brand)"></i>
-                {{ __('for food lovers') }}</p>
+                {{ __('for couriers & restaurants') }}</p>
         </div>
     </footer>
 
     {{-- Back to top --}}
     <button id="toTop" aria-label="{{ __('Back to top') }}"><i class="fa-solid fa-arrow-up"></i></button>
 
-    {{-- ===== Item Modal (Interactive) ===== --}}
+    {{-- ===== Item Modal ===== --}}
     <div class="modal fade" id="itemModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content">
@@ -515,11 +453,9 @@
                             <p id="modalDesc" class="mb-2"></p>
                             <h5 id="modalPrice" class="lead-price mb-3"></h5>
 
-                            <!-- Improved option cards -->
                             <div id="modalOptions"></div>
 
-                            <!-- Changed to stack on mobile: hint below qty -->
-                            <div class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-sm-between mt-2 gap-2">
+                            <div class="d-flex align-items-center justify-content-between mt-2">
                                 <div class="qty-wrap">
                                     <button class="qty-btn" id="qtyMinus" aria-label="{{ __('Decrease quantity') }}"><i class="fa-solid fa-minus"></i></button>
                                     <input id="qtyInput" class="qty-input" type="number" value="1" min="1" step="1">
@@ -541,7 +477,7 @@
         </div>
     </div>
 
-    {{-- ===== Client Cart Panel ===== --}}
+    {{-- ===== Floating Cart + Confirm ===== --}}
     <button class="cart-toggle" id="cartToggle" title="{{ __('Open cart') }}">
         <i class="fa-solid fa-bag-shopping"></i>
         <span class="badge" id="cartCount">0</span>
@@ -554,18 +490,18 @@
             </div>
         </div>
         <div class="cart-body" id="cartBody"></div>
-        <div class="cart-footer" >
+        <div class="cart-footer">
             <div class="fw-bold">{{ __('Total') }}: <span id="cartTotal">0{{ $currency }}</span></div>
-            <button class="btn-confirm" id="confirmOrder"><i class="fa-solid fa-check me-1"></i>{{ __('Confirm Order') }}</button>
+            <button class="btn-confirm" id="confirmBtn"><i class="fa-brands fa-whatsapp me-1"></i>{{ __('Confirm & Send via WhatsApp') }}</button>
         </div>
     </div>
 
-    {{-- ===== Confirm / Codes Modal ===== --}}
+    {{-- ===== Confirm / QR Modal ===== --}}
     <div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">{{ __('Your Order Summary & Codes') }}</h5>
+                    <h5 class="modal-title"><i class="fa-solid fa-truck me-1"></i> {{ __('Order Summary & QR') }}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ __('Close') }}"></button>
                 </div>
                 <div class="modal-body">
@@ -573,66 +509,51 @@
                         <div class="col-12 col-md-6">
                             <h6 class="fw-bold mb-2">{{ __('Order Details') }}</h6>
                             <div id="confirmSummary" class="small"></div>
+
+                            <div class="d-flex flex-wrap gap-2 mt-3">
+                                <a class="btn btn-success btn-sm" id="whShare" target="_blank" rel="noopener">
+                                    <i class="fa-brands fa-whatsapp"></i> {{ __('Send via WhatsApp') }}
+                                </a>
+                                <button class="btn btn-outline-success btn-sm" id="whShareQR">
+                                    <i class="fa-brands fa-whatsapp"></i> {{ __('Share QR (image)') }}
+                                </button>
+                                <button class="btn btn-outline-secondary btn-sm" id="copySummary">
+                                    <i class="fa-regular fa-copy"></i> {{ __('Copy summary') }}
+                                </button>
+                            </div>
+                            <div class="text-muted small mt-2" id="shareHint" style="display:none;">
+                                {{ __('Your device/browser does not support sharing images directly. Use WhatsApp text share or download the QR below.') }}
+                            </div>
                         </div>
                         <div class="col-12 col-md-6">
-                            <div class="mb-2 d-flex align-items-center justify-content-between">
-                                <h6 class="fw-bold mb-0">{{ __('Scan at Counter') }}</h6>
-                                <div class="small text-muted">{{ __('Code:') }} <span id="orderCodeText">—</span></div>
+                            <h6 class="fw-bold mb-2">{{ __('Scan at Counter') }}</h6>
+                            <div id="qrBox"><div id="qrcode"></div></div>
+                            <div id="qrActions" class="d-flex gap-2 mt-3">
+                                <button class="btn btn-outline-secondary btn-sm" id="regenQR"><i class="fa-solid fa-rotate"></i> {{ __('Regenerate') }}</button>
+                                <a class="btn btn-outline-primary btn-sm" id="downloadQR"><i class="fa-solid fa-download"></i> {{ __('Download') }}</a>
+                                <button class="btn btn-outline-success btn-sm" id="printQR"><i class="fa-solid fa-print"></i> {{ __('Print') }}</button>
                             </div>
-                            <div id="qrBox" class="mb-3"><div id="qrcode"></div></div>
-                            <div class="text-muted small mt-2">{{ __('Staff can scan QR to retrieve your order.') }}</div>
+                            <div class="text-muted small mt-2">{{ __('Keep this QR handy. Staff can scan it to retrieve your order instantly.') }}</div>
                         </div>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <a class="btn btn-success" id="sendWhatsApp" target="_blank" rel="noopener">
-                        <i class="fa-brands fa-whatsapp me-1"></i>{{ __('Send via WhatsApp') }}
-                    </a>
-                    <button class="btn btn-outline-secondary" data-bs-dismiss="modal">{{ __('Close') }}</button>
+                    <small class="text-muted me-auto">{{ __('Privacy: the QR only contains order data.') }}</small>
+                    <button class="btn btn-primary" data-bs-dismiss="modal">{{ __('Done') }}</button>
                 </div>
             </div>
         </div>
     </div>
-
-    {{-- ===== Category Sheet (popup mode only) ===== --}}
-    @if($categoryPopup)
-    <div class="offcanvas offcanvas-bottom category-sheet" tabindex="-1" id="categoriesSheet" aria-labelledby="categoriesLabel">
-        <div class="handle" aria-hidden="true"></div>
-        <div class="offcanvas-header pb-2">
-            <h6 class="offcanvas-title fw-bold" id="categoriesLabel"><i class="fa-solid fa-list pe-1"></i> {{ __('Browse Categories') }}</h6>
-            <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="{{ __('Close') }}"></button>
-        </div>
-        <div class="offcanvas-body pt-0">
-            <div class="mb-3">
-                <input id="catFilter" type="search" class="form-control form-control-sm" placeholder="{{ __('Filter categories…') }}" aria-label="{{ __('Filter categories…') }}">
-            </div>
-            <div class="cat-grid" role="listbox" aria-label="{{ __('Categories') }}">
-                @foreach($categories as $cat)
-                    @php
-                        $slug = Str::slug($cat['name']);
-                        $count = is_countable($cat['items'] ?? null) ? count($cat['items']) : 0;
-                    @endphp
-                    <button class="cat-tile" type="button" data-slug="{{ $slug }}" data-name="{{ Str::lower($cat['name']) }}" role="option" aria-selected="false">
-                        <span class="name text-truncate">{{ $cat['name'] }}</span>
-                        <span class="qty">{{ $count }}</span>
-                    </button>
-                @endforeach
-            </div>
-        </div>
-    </div>
-    @endif
 
     <!-- JS assets -->
     <script src="{{ asset('assets/js/jquery-3.7.1.min.js') }}"></script>
     <script src="{{ asset('assets/js/bootstrap.bundle.min.js') }}"></script>
 
     <script>
-        const IS_CAT_POPUP = @json($categoryPopup);
+        /* ===== Config ===== */
+        const WA_NUMBER = '212643714062';
         const RESTAURANT_KEY = @json($restaurantKey);
-        const WA_NUMBER = @json($whatsappNumber); // '' if not set
-        const CURRENCY = '{{ trim($currency) }}';
-        const RESTAURANT_NAME = @json($restaurantName);
-        const RESTAURANT_RID = '{{ hash('crc32b', $restaurantName) }}';
+        const INITIAL_CAT = @json($initialCat);
 
         /* ===== Helpers ===== */
         function formatMoney(val){ return (parseFloat(val).toFixed(2)) + '{{ $currency }}'; }
@@ -644,51 +565,90 @@
             return (h >>> 0).toString(36).slice(0,6).toUpperCase();
         }
 
-        /* ===== Category arrows (normal mode) ===== */
-        const catStrip = document.querySelector('.categories-scroll');
-        const prevBtn  = document.querySelector('.cat-prev');
-        const nextBtn  = document.querySelector('.cat-next');
-        function updateArrows() {
-            if (!catStrip) return;
-            const max = catStrip.scrollWidth - catStrip.clientWidth - 1;
-            prevBtn?.classList.toggle('disabled', catStrip.scrollLeft <= 0);
-            nextBtn?.classList.toggle('disabled', catStrip.scrollLeft >= max);
-        }
-        prevBtn?.addEventListener('click', () => catStrip.scrollBy({ left: -260, behavior: 'smooth' }));
-        nextBtn?.addEventListener('click', () => catStrip.scrollBy({ left:  260, behavior: 'smooth' }));
-        catStrip?.addEventListener('scroll', updateArrows);
-        window.addEventListener('resize', updateArrows);
-        updateArrows();
-
-        /* Scroll active pill into view (normal mode) */
-        document.querySelectorAll('#pills-tab button[data-bs-toggle="pill"]').forEach(btn => {
-            btn.addEventListener('shown.bs.tab', e => {
-                e.target.scrollIntoView({ behavior:'smooth', inline:'center', block:'nearest' });
-            });
-        });
-
-        /* Back to top */
+        /* ===== Back to top ===== */
         const toTop = document.getElementById('toTop');
         window.addEventListener('scroll', () => { toTop.style.display = window.scrollY > 500 ? 'flex' : 'none'; });
         toTop.addEventListener('click', () => window.scrollTo({top:0, behavior:'smooth'}));
 
-        /* Live search (with highlight) — keep focus in the search input */
+        /* ===== Categories <-> Items navigation ===== */
+        const viewCats  = document.getElementById('viewCategories');
+        const viewItems = document.getElementById('viewItems');
+        const titleEl   = document.getElementById('currentCatTitle');
+
+        function showCats(){
+            viewCats.classList.remove('d-none');
+            viewItems.classList.add('d-none');
+            // clear any search UI
+            $('#searchResults').addClass('d-none').empty();
+            $('#menuSearch').val('');
+            // clean URL cat param
+            const url = new URL(window.location);
+            url.searchParams.delete('cat');
+            history.replaceState({}, '', url);
+            window.scrollTo({top: viewCats.offsetTop - 70, behavior:'smooth'});
+        }
+        function showItems(slug, label){
+            viewCats.classList.add('d-none');
+            viewItems.classList.remove('d-none');
+            document.querySelectorAll('.category-pane').forEach(p => p.classList.add('d-none'));
+            const pane = document.getElementById('cat-'+slug);
+            if(pane){ pane.classList.remove('d-none'); }
+            titleEl.textContent = label || '';
+            // update URL
+            const url = new URL(window.location);
+            url.searchParams.set('cat', slug);
+            history.replaceState({}, '', url);
+            window.scrollTo({top: viewItems.offsetTop - 70, behavior:'smooth'});
+        }
+
+        // Bind cat cards
+        document.querySelectorAll('.cat-card').forEach(btn=>{
+            btn.addEventListener('click', ()=>{
+                const slug = btn.getAttribute('data-slug');
+                const label = btn.querySelector('.name')?.textContent || '';
+                showItems(slug, label);
+            });
+        });
+        document.getElementById('backToCats')?.addEventListener('click', showCats);
+
+        // Filter categories
+        document.getElementById('catFilter')?.addEventListener('input', (e)=>{
+            const q = (e.target.value || '').trim().toLowerCase();
+            document.querySelectorAll('.cat-card').forEach(tile=>{
+                const name = tile.getAttribute('data-name') || '';
+                tile.style.display = (!q || name.includes(q)) ? '' : 'none';
+            });
+        });
+
+        // Deep-link on load
+        if (INITIAL_CAT) {
+            const tile = document.querySelector(`.cat-card[data-slug="${INITIAL_CAT}"]`);
+            const label = tile?.querySelector('.name')?.textContent || INITIAL_CAT;
+            showItems(INITIAL_CAT, label);
+        }
+
+        /* ===== Live search (works from any view) ===== */
         $('#menuSearch').on('input', function () {
             const q = $(this).val().trim().toLowerCase();
-            const $pills = $('#pills-tab'),
-                  $panes = $('#pills-tabContent'),
-                  $res   = $('#searchResults').empty();
+            const $res = $('#searchResults').empty();
 
             if (!q) {
                 $res.addClass('d-none');
-                $pills.removeClass('d-none');
-                $panes.removeClass('d-none');
+                // if we were on categories, keep it; if on items, keep current pane
                 return;
             }
-            $pills.addClass('d-none'); // safe if not present
-            $panes.addClass('d-none');
+
+            // Ensure items view is visible to display results nicely
+            if (viewItems.classList.contains('d-none')) {
+                viewCats.classList.add('d-none');
+                viewItems.classList.remove('d-none');
+                document.querySelectorAll('.category-pane').forEach(p => p.classList.add('d-none'));
+                titleEl.textContent = '{{ __("Search Results") }}';
+            }
+
             $res.removeClass('d-none');
 
+            // search across all rendered items
             $('.single-menu-items').each(function () {
                 const $it = $(this);
                 const n   = ($it.data('name') || '');
@@ -705,7 +665,7 @@
             }
         });
 
-        /* ===== Modal logic: option cards ===== */
+        /* ===== Modal (variations uppercase) ===== */
         const itemModal = new bootstrap.Modal(document.getElementById('itemModal'));
         let currentItem = null;
 
@@ -719,7 +679,7 @@
                 const vid = v.id || ('v'+vIdx);
 
                 html += `<div class="v-group" data-vid="${vid}" data-single="${isSingle?1:0}" data-min="${minSel}" data-max="${maxSel}">
-                            <div class="v-title">${v.name}${v.is_required ? ' <span class="text-danger">*</span>' : ''}</div>
+                            <div class="v-title">${(v.name||'').toString().toUpperCase()}${v.is_required ? ' <span class="text-danger">*</span>' : ''}</div>
                             <div class="options-grid">`;
 
                 (v.options||[]).forEach((o, oIdx) => {
@@ -735,7 +695,7 @@
                         <label class="option-card ${disabled?'disabled':''}" ${isSingle ? 'role="radio"' : 'role="checkbox"'} aria-checked="false">
                             <input class="option-input" type="${inputType}" ${nameAttr} value="${oid}" data-adj="${adj}" ${def?'data-default="1"':''} ${disabled?'disabled':''}>
                             <div class="option-inner">
-                                <div class="option-name">${o.name}</div>
+                                <div class="option-name">${(o.name||'').toString().toUpperCase()}</div>
                                 ${badge}
                                 <span class="option-check" aria-hidden="true"><i class="fa-solid fa-check"></i></span>
                             </div>
@@ -815,10 +775,11 @@
         function gatherSelections(){
             const selections = [];
             document.querySelectorAll('#modalOptions .v-group').forEach(group=>{
-                const vName = group.querySelector('.v-title').textContent.replace('*','').trim();
+                const raw = group.querySelector('.v-title').textContent.replace('*','').trim();
+                const vName = raw; // already uppercase
                 const opts = [];
                 group.querySelectorAll('.option-input:checked').forEach(inp=>{
-                    const name = inp.closest('.option-card').querySelector('.option-name')?.textContent || '';
+                    const name = (inp.closest('.option-card').querySelector('.option-name')?.textContent || '').toUpperCase();
                     const adj  = parseFloat(inp.getAttribute('data-adj')||0);
                     opts.push({name, adj});
                 });
@@ -844,7 +805,6 @@
             const optsHtml = renderVariations(variations);
             $('#modalOptions').html(optsHtml);
 
-            // qty init
             $('#qtyInput').attr({min:minqty}).val(minqty);
             if(maxqty){ $('#qtyInput').attr({max:maxqty}); } else { $('#qtyInput').removeAttr('max'); }
 
@@ -856,14 +816,12 @@
                 currency: '{{ $currency }}'
             };
 
-            // bind option inputs (change)
             $('#modalOptions').off('change').on('change', '.option-input', function(){
                 enforceMax(this.closest('.v-group'), this);
                 refreshSelectionStyles();
                 validateRequired(); recalcPrice();
             });
 
-            // defaults & first calc
             applyDefaults();
             refreshSelectionStyles();
             validateRequired(); recalcPrice();
@@ -894,8 +852,10 @@
             recalcPrice();
         });
 
-        /* ===== Client Cart (localStorage) ===== */
-        const cartKey   = 'clientCart:' + RESTAURANT_KEY; // scoped per restaurant
+        /* ===== Agent Cart ===== */
+        const cartKey   = 'agentCart:' + RESTAURANT_KEY;
+        const lastKey   = 'agentLastOrder:' + RESTAURANT_KEY;
+
         const cart      = document.getElementById('cart');
         const cartToggle= document.getElementById('cartToggle');
         const cartBody  = document.getElementById('cartBody');
@@ -905,15 +865,7 @@
 
         function getCart(){ try { return JSON.parse(localStorage.getItem(cartKey)||'[]'); } catch(e){ return []; } }
         function setCart(arr){ localStorage.setItem(cartKey, JSON.stringify(arr)); renderCart(); }
-
-        function addToCart(line){
-            const arr = getCart();
-            arr.push(line);
-            setCart(arr);
-            cart.classList.add('open');
-            cartToggle.querySelector('.badge').classList.add('animate__animated','animate__heartBeat');
-            setTimeout(()=> cartToggle.querySelector('.badge').classList.remove('animate__animated','animate__heartBeat'), 900);
-        }
+        function addToCart(line){ const arr = getCart(); arr.push(line); setCart(arr); cart.classList.add('open'); }
 
         function renderCart(){
             const arr = getCart();
@@ -929,7 +881,7 @@
                     return `<div><small>${v.name}: ${opts}</small></div>`;
                 }).join('');
 
-            const el = document.createElement('div');
+                const el = document.createElement('div');
                 el.className = 'cart-line';
                 el.innerHTML = `
                     <img src="${ln.img}" alt="">
@@ -950,7 +902,8 @@
                 `;
                 cartBody.appendChild(el);
             });
-            cartTotal.textContent = total.toFixed(2) + '{{ $currency }}';
+            const tStr = total.toFixed(2) + '{{ $currency }}';
+            cartTotal.textContent = tStr;
             cartCount.textContent = count;
 
             cartBody.querySelectorAll('button[data-act]').forEach(b=>{
@@ -959,13 +912,9 @@
                     const act = b.getAttribute('data-act');
                     const arr = getCart();
                     const ln  = arr[idx]; if(!ln) return;
-                    if(act==='inc'){
-                        ln.qty += 1;
-                    }else if(act==='dec'){
-                        ln.qty = Math.max(1, ln.qty-1);
-                    }else if(act==='rm'){
-                        arr.splice(idx,1);
-                    }
+                    if(act==='inc'){ ln.qty += 1; }
+                    else if(act==='dec'){ ln.qty = Math.max(1, ln.qty-1); }
+                    else if(act==='rm'){ arr.splice(idx,1); }
                     ln.total = ln.unit * ln.qty;
                     setCart(arr);
                 });
@@ -974,7 +923,6 @@
 
         // init
         renderCart();
-
         cartToggle.addEventListener('click', ()=> cart.classList.toggle('open'));
         clearCart.addEventListener('click', ()=> setCart([]));
 
@@ -984,18 +932,15 @@
             const qty = parseInt(document.getElementById('qtyInput').value,10) || 1;
             const {unit, total} = recalcPrice();
             const selections = gatherSelections();
-            addToCart({
-                name: currentItem.name,
-                img:  currentItem.img,
-                unit, qty, total,
-                selections
-            });
+            addToCart({ name: currentItem.name, img: currentItem.img, unit, qty, total, selections });
             itemModal.hide();
         });
 
-        /* ===== Confirm / Codes: summary + QR + WhatsApp ===== */
-        const confirmModal = new bootstrap.Modal(document.getElementById('confirmModal'));
+        /* ===== Confirm & QR & WhatsApp ===== */
+        const confirmModalEl = document.getElementById('confirmModal');
+        const confirmModal = new bootstrap.Modal(confirmModalEl);
         const qrcodeBox = document.getElementById('qrcode');
+        let lastPayload = null;
 
         function buildOrderPayload(){
             const items = getCart().map(l => ([
@@ -1005,38 +950,40 @@
             const sum = +getCart().reduce((s,i)=>s+i.total,0).toFixed(2);
             const payload = {
                 v: 1,
-                rid: RESTAURANT_RID,
-                r: RESTAURANT_NAME,
+                type: 'delivery_partner',
+                rid: '{{ hash('crc32b', $restaurantName) }}',
+                r: '{{ $restaurantName }}',
                 t: Date.now(),
-                cur: CURRENCY,
+                cur: '{{ trim($currency) }}',
                 items,
                 sum
             };
             payload.code = shortHash(JSON.stringify(payload).slice(0,256));
+            lastPayload = payload;
             return payload;
         }
 
-        function renderConfirmSummary(){
-            const arr = getCart();
+        function renderConfirmSummary(payload){
+            const arr = payload.items || [];
             const box = document.getElementById('confirmSummary');
             if(!arr.length){ box.innerHTML = `<div class="text-muted">{{ __('Your cart is empty.') }}</div>`; return; }
-            box.innerHTML = arr.map(l=>{
-                const opts = (l.selections||[]).map(v=>{
-                    const os = v.options.map(o=> o.name + (o.adj?` (+${o.adj.toFixed(2)}{{ $currency }})`:``)).join(', ');
-                    return `<div class="text-muted">${v.name}: ${os}</div>`;
+            box.innerHTML = arr.map(([name, qty, unit, total, sel])=>{
+                const opts = (sel||[]).map(([vname, options])=>{
+                    const os = (options||[]).map(([n,a])=> n + (a?` (+${a.toFixed(2)}{{ $currency }})`:``)).join(', ');
+                    return `<div class="text-muted">${vname}: ${os}</div>`;
                 }).join('');
                 return `<div class="mb-2">
                             <div class="d-flex justify-content-between">
-                                <div><strong>${l.name}</strong> × ${l.qty}</div>
-                                <div class="fw-bold">${l.total.toFixed(2)}{{ $currency }}</div>
+                                <div><strong>${name}</strong> × ${qty}</div>
+                                <div class="fw-bold">${total.toFixed(2)}{{ $currency }}</div>
                             </div>
                             ${opts}
                         </div>`;
-            }).join('') + `<hr class="my-2"><div class="d-flex justify-content-between"><div class="fw-bold">{{ __('Total') }}</div><div class="fw-bold">${arr.reduce((s,i)=>s+i.total,0).toFixed(2)}{{ $currency }}</div></div>`;
+            }).join('') + `<hr class="my-2"><div class="d-flex justify-content-between"><div class="fw-bold">{{ __('Total') }}</div><div class="fw-bold">${payload.sum.toFixed(2)}{{ $currency }}</div></div>`;
         }
 
         function generateQR(payload){
-            if(typeof QRCode === 'undefined'){ return; }
+            if(typeof QRCode === 'undefined'){ console.warn('QRCode lib not loaded'); return; }
             qrcodeBox.innerHTML = '';
             new QRCode(qrcodeBox, {
                 text: JSON.stringify(payload),
@@ -1046,92 +993,112 @@
             });
         }
 
+        function downloadQR(){
+            const canvas = qrcodeBox.querySelector('canvas');
+            if(!canvas) return;
+            const link = document.getElementById('downloadQR');
+            link.download = `agent-order-{{ Str::slug($restaurantName) }}.png`;
+            link.href = canvas.toDataURL('image/png');
+        }
+
         function buildShareText(payload){
-            const S = '————————————';
+            const cur = '{{ $currency }}';
+            const S   = '------------------------------';
             const lines = [];
-            lines.push(`*${RESTAURANT_NAME}* — *Order*`);
+            lines.push(`*{{ $restaurantName }}* — *Agent Order*`);
             lines.push(`*Code:* ${payload.code}`);
             lines.push(S);
             lines.push(`*Items*`);
             (payload.items || []).forEach(([name, qty, unit, total, sel])=>{
-                lines.push(`- *${name}* ×${qty} — ${total.toFixed(2)}${CURRENCY}`);
+                lines.push(`- *${name}* ×${qty}`);
                 (sel||[]).forEach(([vname, options])=>{
-                    const os = (options||[]).map(([n,a])=> a ? `${n} (+${a.toFixed(2)}${CURRENCY})` : n).join(', ');
-                    if(os) lines.push(`   • ${vname}: ${os}`);
+                    (options||[]).forEach(([n,a])=>{
+                        const adj = a ? ` (+${a.toFixed(2)}${cur})` : '';
+                        lines.push(`   • ${vname}: ${n}${adj}`);
+                    });
                 });
+                lines.push(`   — Line total: ${total.toFixed(2)}${cur}`);
+                lines.push('----------------');
             });
             lines.push(S);
-            lines.push(`*Total:* ${payload.sum.toFixed(2)}${CURRENCY}`);
+            lines.push(`*Grand total:* ${payload.sum.toFixed(2)}${cur}`);
             return encodeURIComponent(lines.join('\n'));
         }
         function waUrlFor(payload){
-            const base = WA_NUMBER ? `https://wa.me/${WA_NUMBER}` : `https://wa.me/`;
-            return `${base}?text=${buildShareText(payload)}`;
+            return `https://wa.me/${WA_NUMBER}?text=${buildShareText(payload)}`;
         }
 
-        document.getElementById('confirmOrder').addEventListener('click', ()=>{
-            if(!getCart().length){
-                cart.classList.add('open');
-                return;
-            }
-            const payload = buildOrderPayload();
-            renderConfirmSummary();
-            generateQR(payload);
-            document.getElementById('sendWhatsApp').href = waUrlFor(payload);
+        function openPreview(payload){
+            renderConfirmSummary(payload);
+            setTimeout(()=> { generateQR(payload); downloadQR(); }, 10);
+            document.getElementById('whShare').href = waUrlFor(payload);
             confirmModal.show();
+        }
+
+        document.getElementById('confirmBtn').addEventListener('click', ()=>{
+            const cartNow = getCart();
+            if(!cartNow.length){ cart.classList.add('open'); return; }
+            const payload = buildOrderPayload();
+            window.open(waUrlFor(payload), '_blank', 'noopener');
+            openPreview(payload);
+            localStorage.setItem(lastKey, JSON.stringify({ when: Date.now(), cart: cartNow }));
+            setCart([]); // clear after sending
         });
 
-        /* ===== Category Popup interactions ===== */
-        if (IS_CAT_POPUP) {
-            const openBtn   = document.getElementById('openCategories');
-            const sheetEl   = document.getElementById('categoriesSheet');
-            const catFilter = document.getElementById('catFilter');
-
-            const catOffcanvas = sheetEl ? new bootstrap.Offcanvas(sheetEl) : null;
-
-            function showCategoryBySlug(slug){
-                const input = document.getElementById('menuSearch');
-                if (input) input.value = '';
-                $('#searchResults').addClass('d-none');
-                $('#pills-tabContent').removeClass('d-none');
-
-                document.querySelectorAll('#pills-tabContent .tab-pane').forEach(p=>{
-                    p.classList.remove('show','active');
-                });
-                const target = document.getElementById('pills-' + slug);
-                if (target) target.classList.add('show','active');
-
-                const y = document.querySelector('.food-menu-section')?.getBoundingClientRect().top + window.scrollY - 60;
-                if (!isNaN(y)) window.scrollTo({ top: y, behavior: 'smooth' });
+        document.getElementById('confirmModal').addEventListener('shown.bs.modal', ()=>{
+            const payload = lastPayload || buildOrderPayload();
+            renderConfirmSummary(payload);
+            setTimeout(()=> { generateQR(payload); downloadQR(); }, 10);
+            document.getElementById('whShare').href = waUrlFor(payload);
+        });
+        document.getElementById('regenQR').addEventListener('click', ()=>{
+            const payload = lastPayload || buildOrderPayload();
+            generateQR(payload); downloadQR();
+        });
+        document.getElementById('downloadQR').addEventListener('click', (e)=>{
+            if(!e.currentTarget.href) { e.preventDefault(); const p = lastPayload || buildOrderPayload(); generateQR(p); downloadQR(); }
+        });
+        document.getElementById('printQR').addEventListener('click', ()=>{
+            const canvas = qrcodeBox.querySelector('canvas');
+            if(!canvas) return;
+            const dataUrl = canvas.toDataURL('image/png');
+            const w = window.open('', 'PRINT', 'height=420,width=420');
+            w.document.write(`<img src="${dataUrl}" style="width:100%;height:auto;"/>`);
+            w.document.close(); w.focus(); w.print(); w.close();
+        });
+        document.getElementById('whShareQR').addEventListener('click', async ()=>{
+            const canvas = qrcodeBox.querySelector('canvas');
+            const hint = document.getElementById('shareHint');
+            hint.style.display = 'none';
+            if(!canvas){
+                const p = lastPayload || buildOrderPayload();
+                generateQR(p);
+                setTimeout(()=>document.getElementById('whShareQR').click(), 40);
+                return;
             }
-
-            openBtn?.addEventListener('click', () => {
-                catOffcanvas?.show();
-                setTimeout(()=>catFilter?.focus(), 150);
-            });
-
-            sheetEl?.querySelectorAll('.cat-tile').forEach(btn=>{
-                btn.addEventListener('click', ()=>{
-                    const slug = btn.getAttribute('data-slug');
-                    showCategoryBySlug(slug);
-                    catOffcanvas?.hide();
-                });
-            });
-
-            catFilter?.addEventListener('input', (e)=>{
-                const q = (e.target.value || '').trim().toLowerCase();
-                sheetEl.querySelectorAll('.cat-tile').forEach(tile=>{
-                    const name = tile.getAttribute('data-name') || '';
-                    tile.style.display = (!q || name.includes(q)) ? '' : 'none';
-                });
-            });
-
-            window.addEventListener('keydown', (e)=>{
-                if ((e.key==='c' || e.key==='C') && !e.target.closest('input,textarea')) {
-                    catOffcanvas?.show();
+            canvas.toBlob(async (blob)=>{
+                if(!blob) return;
+                const file = new File([blob], 'order-qr.png', { type: 'image/png' });
+                const payload = lastPayload || buildOrderPayload();
+                const text = decodeURIComponent(buildShareText(payload));
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    try{ await navigator.share({ files: [file], title: 'QR Order', text }); } catch(e){}
+                } else {
+                    hint.style.display = 'block';
                 }
             });
-        }
+        });
+        document.getElementById('copySummary').addEventListener('click', async ()=>{
+            const payload = lastPayload || buildOrderPayload();
+            const text = decodeURIComponent(buildShareText(payload));
+            try{
+                await navigator.clipboard.writeText(text.replace(/\u00A0/g,' '));
+                const btn = document.getElementById('copySummary');
+                const old = btn.innerHTML;
+                btn.innerHTML = '<i class="fa-regular fa-circle-check"></i> {{ __('Copied!') }}';
+                setTimeout(()=> btn.innerHTML = old, 1200);
+            }catch(e){}
+        });
     </script>
 </body>
 </html>

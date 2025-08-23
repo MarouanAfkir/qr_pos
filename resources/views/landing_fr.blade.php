@@ -6,9 +6,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description"
-        content="QRivo — Menu digital moderne : QR personnalisés, multilingue, statistiques en temps réel et (optionnel) commande en salle." />
+        content="QRevo — Menu digital moderne : QR personnalisés, multilingue, statistiques en temps réel et (optionnel) commande en salle." />
     <meta name="theme-color" content="#FF8A3D" />
-    <title>QRivo — Le menu digital moderne</title>
+    <title>QRevo — Le menu digital moderne</title>
     <link rel="shortcut icon" href="{{ asset('assets/img/favicon.png') }}">
 
     <!-- ========= FONTS & CSS ========= -->
@@ -554,6 +554,76 @@
                 display: flex
             }
         }
+
+        /* ===== HERO CARD STYLING ===== */
+        .hero .card {
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-1);
+            overflow: hidden;
+            transition: transform .18s ease, box-shadow .18s ease;
+            background: #fff;
+        }
+
+        .hero .card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-2);
+        }
+
+        .hero .card img {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* Sizing helpers to achieve: big left + two stacked right */
+        .card-tall {
+            min-height: 460px;
+        }
+
+        .card-half {
+            min-height: 220px;
+        }
+
+        @media (max-width: 575.98px) {
+            .card-tall {
+                min-height: 360px;
+            }
+
+            .card-half {
+                min-height: 200px;
+            }
+        }
+
+        /* ===== Product Tour (new showcase) ===== */
+        .tour-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1rem;
+            height: 100%;
+            box-shadow: var(--shadow-1);
+        }
+
+        .tour-thumb {
+            border: 1px solid var(--border);
+            background: #fff;
+            border-radius: 12px;
+            padding: .35rem;
+            cursor: pointer;
+            transition: box-shadow .15s ease, border-color .15s ease, transform .1s ease;
+        }
+
+        .tour-thumb:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-1);
+        }
+
+        .tour-thumb.active {
+            border-color: var(--brand);
+            box-shadow: 0 0 0 3px var(--ring);
+        }
     </style>
 </head>
 
@@ -563,9 +633,8 @@
     <nav class="navbar navbar-expand-lg" id="siteNav" aria-label="Navigation principale">
         <div id="scrollProgress" aria-hidden="true"></div>
         <div class="container">
-            <a class="navbar-brand d-flex align-items-center gap-2" href="#" aria-label="QRivo accueil">
-                <img src="{{ asset('assets/img/logo/accountLogo.png') }}" alt="QRivo" height="40">
-                <strong>QRivo</strong>
+            <a class="navbar-brand d-flex align-items-center gap-2" href="#" aria-label="QRevo accueil">
+                <img src="{{ asset('assets/img/saas/qrevo_under.png') }}" alt="QRevo" height="52">
             </a>
 
             <!-- Desktop links + indicator -->
@@ -595,8 +664,8 @@
         aria-labelledby="offcanvasNavLabel">
         <div class="offcanvas-header">
             <div class="d-flex align-items-center gap-2">
-                <img src="{{ asset('assets/img/logo/accountLogo.png') }}" alt="QRivo" height="28">
-                <strong id="offcanvasNavLabel">QRivo</strong>
+                <img src="{{ asset('assets/img/saas/logo_with_words.png') }}" alt="QRevo" height="28">
+                <strong id="offcanvasNavLabel">QRevo</strong>
             </div>
             <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Fermer"></button>
         </div>
@@ -636,14 +705,36 @@
                         <div><i class="bi bi-shield-check"></i> Sauvegardes quotidiennes</div>
                     </div>
                 </div>
+
+                <!-- HERO MOSAIC: one big on left, two stacked on right -->
                 <div class="col-lg-6">
-                    <div class="phone" aria-label="Aperçu du menu sur smartphone">
-                        <div class="screen">
-                            <img id="demoScreen" src="{{ asset('assets/img/saas/demo-1.jpg') }}" alt="Aperçu du menu"
-                                width="320" height="640" fetchpriority="high" decoding="async">
+                    <div class="row g-3 align-items-stretch">
+                        <!-- Big left image -->
+                        <div class="col-12 col-sm-7">
+                            <div class="card h-100 card-tall">
+                                <img src="{{ asset('assets/img/saas/hero1.png') }}" alt="Aperçu grand: menu digital">
+                                <div class="card-body text-center">
+                                    <p class="small text-muted mb-0 fw-bolder">Parcours client fluide</p>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Right column: two stacked -->
+                        <div class="col-12 col-sm-5 d-flex flex-column gap-3">
+                            <div class="card card-half">
+                                <img src="{{ asset('assets/img/saas/hero2.png') }}" alt="Aperçu: QR personnalisés">
+                                <div class="card-body text-center">
+                                    <p class="small text-muted mb-0 fw-bolder">Expérience client inoubliable</p>
+                                </div>
+                            </div>
+                            <div class="card card-half">
+                                <img src="{{ asset('assets/img/saas/hero3.png') }}" alt="Aperçu: stats en direct">
+                                <div class="card-body text-center">
+                                    <p class="small text-muted mb-0 fw-bolder">Statistiques en direct</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div class="text-center small text-muted mt-2">Aperçu dynamique (images défilantes)</div>
+                    <div class="text-center small text-muted mt-2">Aperçu du menu digital — mosaïque</div>
                 </div>
             </div>
 
@@ -792,13 +883,13 @@
         <div class="container">
             <div class="text-center mb-4">
                 <h2 class="section-title">Pourquoi passer au digital&nbsp;?</h2>
-                <p class="section-sub">Comparez le menu papier traditionnel et le menu digital QRivo.</p>
+                <p class="section-sub">Comparez le menu papier traditionnel et le menu digital QRevo.</p>
             </div>
 
             <div class="row g-4">
                 <div class="col-lg-6">
                     <div class="compare-card h-100">
-                        <h5 class="mb-3"><i class="bi bi-qr-code-scan me-2 text-success"></i> Menu digital (QRivo)
+                        <h5 class="mb-3"><i class="bi bi-qr-code-scan me-2 text-success"></i> Menu digital (QRevo)
                         </h5>
                         <ul class="compare-list">
                             <li><span class="icon icon-yes"><i class="bi bi-check"></i></span> Mises à jour
@@ -839,53 +930,106 @@
         </div>
     </section>
 
-    <!-- ===== PRODUCT SHOWCASE ===== -->
+    <!-- ===== PRODUCT TOUR (replaces PRODUCT SHOWCASE) ===== -->
     <section id="showcase" class="py-5">
         <div class="container">
-            <div class="row g-4 align-items-stretch">
+            <div class="text-center mb-4">
+                <h2 class="section-title">Découvrez QRevo en un coup d’œil</h2>
+                <p class="section-sub">Un outil complet, pensé pour la prise en main rapide et l’efficacité au
+                    quotidien.</p>
+            </div>
+
+            <div class="row g-4 align-items-center">
+                <!-- Left: big image with thumbs -->
                 <div class="col-lg-6">
-                    <div class="showcase h-100">
-                        <ul class="nav nav-pills gap-2 mb-3" id="prodTabs" role="tablist">
-                            <li class="nav-item"><button class="nav-link active" data-bs-toggle="pill"
-                                    data-bs-target="#tab-editor" type="button" role="tab">Éditeur</button></li>
-                            <li class="nav-item"><button class="nav-link" data-bs-toggle="pill"
-                                    data-bs-target="#tab-qr" type="button" role="tab">QR Designer</button></li>
-                            <li class="nav-item"><button class="nav-link" data-bs-toggle="pill"
-                                    data-bs-target="#tab-analytics" type="button" role="tab">Analytics</button>
-                            </li>
-                        </ul>
-                        <div class="tab-content">
-                            <div class="tab-pane fade show active" id="tab-editor" role="tabpanel">
-                                <img src="{{ asset('assets/img/saas/editor.png') }}" alt="Éditeur du menu"
-                                    class="img-fluid rounded" loading="lazy">
-                            </div>
-                            <div class="tab-pane fade" id="tab-qr" role="tabpanel">
-                                <img src="{{ asset('assets/img/saas/qr-builder.png') }}" alt="Générateur de QR"
-                                    class="img-fluid rounded" loading="lazy">
-                            </div>
-                            <div class="tab-pane fade" id="tab-analytics" role="tabpanel">
-                                <img src="{{ asset('assets/img/saas/analytics.png') }}" alt="Statistiques"
-                                    class="img-fluid rounded" loading="lazy">
-                            </div>
-                        </div>
-                        <div class="small text-muted mt-2">Aperçus d’interface (exemples)</div>
+                    <div class="ratio ratio-16x9 rounded border shadow-sm overflow-hidden">
+                        <img id="tourMain" src="{{ asset('assets/img/saas/editor.png') }}" alt="Aperçu QRevo"
+                            class="w-100 h-100" style="object-fit: cover;">
                     </div>
+                    <div class="d-flex gap-2 mt-3">
+                        <button class="tour-thumb active" type="button"
+                            data-src="{{ asset('assets/img/saas/editor.png') }}" aria-label="Éditeur">
+                            <img src="{{ asset('assets/img/saas/editor.png') }}" width="96" height="60"
+                                style="object-fit: cover;border-radius:8px;">
+                        </button>
+                        <button class="tour-thumb" type="button"
+                            data-src="{{ asset('assets/img/saas/qr-builder.png') }}" aria-label="QR Designer">
+                            <img src="{{ asset('assets/img/saas/qr-builder.png') }}" width="96" height="60"
+                                style="object-fit: cover;border-radius:8px;">
+                        </button>
+                        <button class="tour-thumb" type="button"
+                            data-src="{{ asset('assets/img/saas/analytics.png') }}" aria-label="Analytics">
+                            <img src="{{ asset('assets/img/saas/analytics.png') }}" width="96" height="60"
+                                style="object-fit: cover;border-radius:8px;">
+                        </button>
+                    </div>
+                    <div class="small text-muted mt-2">Parcourez les vues : Éditeur, QR Designer et Analytics.</div>
                 </div>
 
+                <!-- Right: benefit cards -->
                 <div class="col-lg-6">
-                    <div class="showcase h-100">
-                        <h5 class="mb-2">Le parcours en 3 étapes</h5>
-                        <ol class="small text-muted mb-3">
-                            <li>Créez vos catégories et plats</li>
-                            <li>Personnalisez votre QR et imprimez</li>
-                            <li>Suivez les performances en temps réel</li>
-                        </ol>
-                        <img src="{{ asset('assets/img/saas/flow-owner.png') }}" class="img-fluid rounded border"
-                            alt="Flux restaurateur" loading="lazy">
-                        <div class="d-flex gap-2 mt-3">
-                            <a href="/register" class="btn btn-primary">Créer mon compte</a>
-                            <a href="/contact" class="btn btn-outline-primary">Demander une démo</a>
+                    <div class="row g-3">
+                        <div class="col-sm-6">
+                            <div class="tour-card h-100">
+                                <div class="d-flex align-items-center gap-2 mb-2">
+                                    <span class="icon"><i class="bi bi-magic"></i></span>
+                                    <h6 class="m-0 fw-bold">Mise à jour instantanée</h6>
+                                </div>
+                                <p class="small text-muted mb-2">Modifiez plats, prix, photos et allergènes — les
+                                    changements sont visibles immédiatement côté client.</p>
+                                <ul class="small text-muted mb-0 ps-3">
+                                    <li>Édition en ligne</li>
+                                    <li>Gestion des langues</li>
+                                </ul>
+                            </div>
                         </div>
+                        <div class="col-sm-6">
+                            <div class="tour-card h-100">
+                                <div class="d-flex align-items-center gap-2 mb-2">
+                                    <span class="icon"><i class="bi bi-qr-code-scan"></i></span>
+                                    <h6 class="m-0 fw-bold">QR à votre image</h6>
+                                </div>
+                                <p class="small text-muted mb-2">Créez des QR en couleurs avec logo et exports
+                                    haute-définition.</p>
+                                <ul class="small text-muted mb-0 ps-3">
+                                    <li>Logo & couleurs</li>
+                                    <li>Export SVG/PNG</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="tour-card h-100">
+                                <div class="d-flex align-items-center gap-2 mb-2">
+                                    <span class="icon"><i class="bi bi-bag-check"></i></span>
+                                    <h6 class="m-0 fw-bold">Commande à table</h6>
+                                </div>
+                                <p class="small text-muted mb-2">Les clients scannent, commandent et vous recevez
+                                    l’ordre directement en cuisine/caisse.</p>
+                                <ul class="small text-muted mb-0 ps-3">
+                                    <li>Impression cuisine</li>
+                                    <li>Flux caisse intégrés</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="tour-card h-100">
+                                <div class="d-flex align-items-center gap-2 mb-2">
+                                    <span class="icon"><i class="bi bi-graph-up-arrow"></i></span>
+                                    <h6 class="m-0 fw-bold">Analytics utiles</h6>
+                                </div>
+                                <p class="small text-muted mb-2">Comprenez ce que vos clients consultent et optimisez
+                                    vos marges.</p>
+                                <ul class="small text-muted mb-0 ps-3">
+                                    <li>Vues & tendances</li>
+                                    <li>Plats performants</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2 mt-3">
+                        <a href="/register" class="btn btn-primary">Créer mon compte</a>
+                        <a href="/contact" class="btn btn-outline-primary">Demander une démo</a>
                     </div>
                 </div>
             </div>
@@ -897,69 +1041,70 @@
         <div class="container">
             <div class="text-center">
                 <h2 class="section-title">Tarification simple et flexible</h2>
-                <p class="section-sub">Commencez gratuitement. Passez quand vous voulez.</p>
+                <p class="section-sub">Essai gratuit 14 jours, puis choisissez le plan qui vous convient.</p>
                 <div class="toggle mt-1" aria-live="polite">
-                    <span class="seg active" id="billMonthly">Mensuel</span>
-                    <span class="seg" id="billYearly">Annuel <span class="text-success">(–15%)</span></span>
+                    <span class="seg" id="billMonthly">Mensuel</span>
+                    <span class="seg active" id="billYearly">Annuel <span class="text-success">(–15%)</span></span>
                 </div>
             </div>
 
             <div class="row g-4 justify-content-center mt-1">
-                <!-- Free -->
-                <div class="col-md-4 col-lg-3">
+                <!-- Menu Digital -->
+                <div class="col-md-6 col-lg-4">
                     <div class="price-card p-4 h-100">
-                        <h6 class="fw-bold">Gratuit</h6>
+                        <h6 class="fw-bold">Menu Digital</h6>
                         <div class="display-6 fw-extrabold my-2">
-                            <span class="price" data-monthly="0" data-yearly="0">0</span> DH
+                            <span class="price" data-monthly="59" data-yearly="39">39</span> MAD
+                            <span class="fs-6 fw-normal billing-label">/mois (facturé annuellement)</span>
                         </div>
-                        <p class="text-muted small">Idéal pour tester ou petite carte</p>
+                        <p class="text-muted small">Le meilleur du menu QR moderne.</p>
                         <ul class="list-unstyled small mb-4">
-                            <li><i class="bi bi-check2 text-success"></i> 10 plats</li>
-                            <li><i class="bi bi-check2 text-success"></i> QR noir & blanc</li>
-                            <li><i class="bi bi-check2 text-success"></i> Stats basiques</li>
-                            <li><i class="bi bi-x-lg text-danger"></i> Branding QRivo visible</li>
+                            <li><i class="bi bi-check2 text-success"></i> 1 menu illimité</li>
+                            <li><i class="bi bi-check2 text-success"></i> QR en couleurs & branding</li>
+                            <li><i class="bi bi-check2 text-success"></i> Multilingue & devises</li>
+                            <li><i class="bi bi-check2 text-success"></i> Statistiques détaillées</li>
+                            <li><i class="bi bi-check2 text-success"></i> Support standard</li>
                         </ul>
-                        <a href="/register" class="btn btn-outline-primary w-100">Commencer</a>
+                        <a href="/register" class="btn btn-outline-primary w-100">Essai gratuit 14 j</a>
                     </div>
                 </div>
 
-                <!-- Pro (adds client in-place orders) -->
-                <div class="col-md-4 col-lg-3">
+                <!-- Commande & Agents -->
+                <div class="col-md-6 col-lg-4">
                     <div class="price-card p-4 h-100 featured position-relative">
                         <span class="price-badge position-absolute top-0 end-0 mt-3 me-3">Populaire</span>
-                        <h6 class="fw-bold">Pro</h6>
+                        <h6 class="fw-bold">Commande & Agents</h6>
                         <div class="display-6 fw-extrabold my-2">
-                            <span class="price" data-monthly="129" data-yearly="110">129</span> DH
-                            <span class="fs-6 fw-normal billing-label">/mois</span>
+                            <span class="price" data-monthly="79" data-yearly="59">59</span> MAD
+                            <span class="fs-6 fw-normal billing-label">/mois (facturé annuellement)</span>
                         </div>
-                        <p class="text-muted small">Pour un service en salle optimal</p>
+                        <p class="text-muted small">Ajoutez la commande en salle et les agents.</p>
                         <ul class="list-unstyled small mb-4">
-                            <li><i class="bi bi-check2 text-success"></i> 1 menu illimité</li>
-                            <li><i class="bi bi-check2 text-success"></i> QR en couleurs</li>
-                            <li><i class="bi bi-check2 text-success"></i> Multilingue & devises</li>
-                            <li><i class="bi bi-check2 text-success"></i> Statistiques détaillées</li>
-                            <li><i class="bi bi-check2 text-success"></i> Commande en salle</li>
-                            <li><i class="bi bi-check2 text-success"></i> Sans branding QRivo</li>
+                            <li><i class="bi bi-check2 text-success"></i> Tout <strong>Menu Digital</strong></li>
+                            <li><i class="bi bi-check2 text-success"></i> Commande à table (scan & pay*)</li>
+                            <li><i class="bi bi-check2 text-success"></i> Agents de livraison intégrés</li>
+                            <li><i class="bi bi-check2 text-success"></i> Impression cuisine / caisse</li>
+                            <li><i class="bi bi-check2 text-success"></i> Support prioritaire</li>
                         </ul>
                         <a href="/register" class="btn btn-primary w-100">Essai gratuit 14 j</a>
                     </div>
                 </div>
 
-                <!-- Business (adds delivery agents orders) -->
-                <div class="col-md-4 col-lg-3">
+                <!-- POS Complet -->
+                <div class="col-md-6 col-lg-4">
                     <div class="price-card p-4 h-100">
-                        <h6 class="fw-bold">Business</h6>
+                        <h6 class="fw-bold">POS Complet</h6>
                         <div class="display-6 fw-extrabold my-2">
-                            <span class="price" data-monthly="179" data-yearly="152">179</span> DH
-                            <span class="fs-6 fw-normal billing-label">/mois</span>
+                            <span class="price" data-monthly="179" data-yearly="149">149</span> MAD
+                            <span class="fs-6 fw-normal billing-label">/mois (facturé annuellement)</span>
                         </div>
-                        <p class="text-muted small">Pour intégrer la livraison</p>
+                        <p class="text-muted small">Gestion de caisse et rapports avancés.</p>
                         <ul class="list-unstyled small mb-4">
-                            <li><i class="bi bi-check2 text-success"></i> Tout Pro</li>
-                            <li><i class="bi bi-check2 text-success"></i> Agents de livraison intégrés</li>
-                            <li><i class="bi bi-check2 text-success"></i> Passer et gérer des commandes via la solution
-                            </li>
-                            <li><i class="bi bi-check2 text-success"></i> Support prioritaire</li>
+                            <li><i class="bi bi-check2 text-success"></i> Tout <strong>Commande & Agents</strong></li>
+                            <li><i class="bi bi-check2 text-success"></i> Système de caisse (POS)</li>
+                            <li><i class="bi bi-check2 text-success"></i> Inventaire & suivis basiques</li>
+                            <li><i class="bi bi-check2 text-success"></i> Rapports de ventes avancés</li>
+                            <li><i class="bi bi-check2 text-success"></i> Assistance dédiée</li>
                         </ul>
                         <a href="/register" class="btn btn-outline-primary w-100">Essai gratuit 14 j</a>
                     </div>
@@ -968,6 +1113,9 @@
 
             <p class="text-center small text-muted mt-3">
                 Réduction appliquée en annuel. Tarifs pensés pour le marché marocain.
+            </p>
+            <p class="text-center small mt-1">
+                Besoin d’un site web vitrine&nbsp;? Forfait fixe <strong>1449 MAD</strong> (hors nom de domaine).
             </p>
         </div>
     </section>
@@ -988,8 +1136,8 @@
                             data-bs-target="#fq1c">Comment fonctionne l’essai&nbsp;?</button>
                     </h2>
                     <div id="fq1c" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-                        <div class="accordion-body small">Essai de 14 jours sur Starter, sans carte bancaire. Sans
-                            action de votre part, vous passez en offre gratuite.</div>
+                        <div class="accordion-body small">Essai de 14 jours sur tous les plans payants. Sans action de
+                            votre part, l’abonnement se poursuit au tarif sélectionné.</div>
                     </div>
                 </div>
                 <div class="accordion-item">
@@ -1036,8 +1184,8 @@
                 <div class="col-lg-4">
                     <div class="footer-card h-100">
                         <div class="footer-brand mb-2">
-                            <img src="{{ asset('assets/img/logo/accountLogo.png') }}" alt="QRivo">
-                            <strong>QRivo</strong>
+                            <img src="{{ asset('assets/img/saas/logo_with_words.png') }}" alt="QRevo">
+                            <strong>QRevo</strong>
                         </div>
                         <p class="small text-muted mb-3">
                             Le menu digital moderne pour restaurants, cafés et hôtels. QR personnalisés, multilingue,
@@ -1091,7 +1239,7 @@
 
             <div class="d-flex flex-column flex-md-row align-items-center justify-content-between pb-4">
                 <p class="small text-muted mb-2 mb-md-0">
-                    &copy; 2025 QRivo Inc. Tous droits réservés.
+                    &copy; 2025 QRevo Inc. Tous droits réservés.
                 </p>
                 <div class="d-flex align-items-center gap-3">
                     <a href="#overview" class="btn btn-outline-primary btn-sm" id="toTopBtn"
@@ -1107,7 +1255,7 @@
     <div class="mobile-cta">
         <div class="d-flex align-items-center gap-2">
             <i class="bi bi-qr-code-scan"></i>
-            <span class="small">Essayez QRivo gratuitement</span>
+            <span class="small">Essayez QRevo gratuitement</span>
         </div>
         <a href="/register" class="btn btn-primary btn-sm">Créer mon compte</a>
     </div>
@@ -1115,19 +1263,6 @@
     <!-- ========= SCRIPTS ========= -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" defer></script>
     <script>
-        // Phone demo carousel
-        const demo = document.getElementById('demoScreen');
-        const shots = [
-            "{{ asset('assets/img/saas/demo-1.jpg') }}",
-            "{{ asset('assets/img/saas/demo-2.jpg') }}",
-            "{{ asset('assets/img/saas/demo-3.jpg') }}"
-        ];
-        let idx = 0;
-        setInterval(() => {
-            idx = (idx + 1) % shots.length;
-            if (demo) demo.src = shots[idx];
-        }, 3200);
-
         // Pricing toggle
         const billMonthly = document.getElementById('billMonthly');
         const billYearly = document.getElementById('billYearly');
@@ -1142,7 +1277,8 @@
         }
         billMonthly?.addEventListener('click', () => setBilling(false));
         billYearly?.addEventListener('click', () => setBilling(true));
-        setBilling(false);
+        // Default to ANNUAL
+        setBilling(true);
 
         // Navbar behavior + progress + active link indicator
         const nav = document.getElementById('siteNav');
@@ -1230,6 +1366,19 @@
             window.scrollTo({
                 top: 0,
                 behavior: 'smooth'
+            });
+        });
+
+        // Product tour thumbs
+        const tourMain = document.getElementById('tourMain');
+        document.querySelectorAll('.tour-thumb').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const src = btn.getAttribute('data-src');
+                if (tourMain && src) {
+                    tourMain.src = src;
+                }
+                document.querySelectorAll('.tour-thumb').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
             });
         });
     </script>

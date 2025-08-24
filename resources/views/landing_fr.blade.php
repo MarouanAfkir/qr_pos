@@ -647,6 +647,12 @@
                     <li class="nav-item"><a class="nav-link" href="#faq">FAQ</a></li>
                     <li class="nav-item ms-1"><a href="/login" class="btn btn-outline-primary">Se connecter</a></li>
                     <li class="nav-item ms-1"><a href="/register" class="btn btn-primary">Essai gratuit</a></li>
+                    <!-- Lang switcher to Arabic with Morocco flag -->
+                    <li class="nav-item ms-1">
+                        <a href="?lang=ar" class="btn btn-light" title="Basculer en arabe">
+                            <span class="me-1">AR</span><span aria-hidden="true">🇲🇦</span>
+                        </a>
+                    </li>
                 </ul>
                 <div class="nav-indicator" id="navIndicator"></div>
             </div>
@@ -675,6 +681,8 @@
                 <a class="list-group-item" href="#showcase" data-close>Produit</a>
                 <a class="list-group-item" href="#pricing" data-close>Tarifs</a>
                 <a class="list-group-item" href="#faq" data-close>FAQ</a>
+                <!-- Lang switcher in offcanvas -->
+                <a class="list-group-item" href="?lang=ar" data-close>العربية 🇲🇦</a>
             </div>
             <div class="d-grid gap-2 mt-3">
                 <a href="/login" class="btn btn-outline-primary">Se connecter</a>
@@ -1099,7 +1107,6 @@
                             <li><i class="bi bi-check2 text-success"></i> Rapports de ventes avancés</li>
                             <li><i class="bi bi-check2 text-success"></i> Assistance dédiée</li>
                         </ul>
-                        <a href="/register" class="btn btn-outline-primary w-100">Essai gratuit 14 j</a>
                     </div>
                 </div>
             </div>
@@ -1209,7 +1216,7 @@
                     <h6 class="fw-bold mb-3">Ressources</h6>
                     <ul class="list-unstyled small m-0">
                         <li class="mb-2"><a class="footer-link" href="/contact">Contact</a></li>
-                        <li class="mb-2"><a class="footer-link" href="/terms">CGU</a></li>
+                        <li class="mb-2"><a class="footer-link" href="/privacy">Politique de confidentialité</a></li>
                         <li class="mb-2"><a class="footer-link" href="/login">Se connecter</a></li>
                         <li class="mb-2"><a class="footer-link" href="/register">Créer un compte</a></li>
                     </ul>

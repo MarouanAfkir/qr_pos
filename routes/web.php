@@ -8,6 +8,9 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', [LandingController::class, 'index']);
 //blog
+Route::get('/privacy', function() {
+    return view('pages.privacy');
+});
 // Route::get('/blog', function() {
 //     return view('pages.blog');
 // });

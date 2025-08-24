@@ -9,7 +9,7 @@
         content="QRevo — Menu digital moderne : QR personnalisés, multilingue, statistiques en temps réel et (optionnel) commande en salle." />
     <meta name="theme-color" content="#FF8A3D" />
     <title>QRevo — Le menu digital moderne</title>
-    <link rel="shortcut icon" href="{{ asset('assets/img/favicon.png') }}">
+    <link rel="shortcut icon" href="{{ asset('/favicon.ico') }}">
 
     <!-- ========= FONTS & CSS ========= -->
     <link rel="preconnect" href="https://fonts.googleapis.com" fetchpriority="low" />
@@ -664,8 +664,7 @@
         aria-labelledby="offcanvasNavLabel">
         <div class="offcanvas-header">
             <div class="d-flex align-items-center gap-2">
-                <img src="{{ asset('assets/img/saas/logo_with_words.png') }}" alt="QRevo" height="28">
-                <strong id="offcanvasNavLabel">QRevo</strong>
+                <img src="{{ asset('assets/img/saas/qrevo_under.png') }}" alt="QRevo" height="28">
             </div>
             <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Fermer"></button>
         </div>
@@ -742,22 +741,16 @@
             <div class="mt-5 pt-3">
                 <div class="text-center text-muted mb-2">Utilisé par des cafés, restaurants et hôtels</div>
                 <div class="d-flex flex-wrap justify-content-center align-items-center gap-3">
-                    <img src="{{ asset('assets/img/clients/cafe-atlas.jpg') }}" alt="Café Atlas"
+                    <img src="{{ asset('assets/img/saas/clients/moca.png') }}" alt="Café Atlas"
                         style="height:44px;border-radius:10px;border:1px solid var(--border);box-shadow:0 .35rem .9rem rgba(0,0,0,.06);background:#fff"
                         loading="lazy">
-                    <img src="{{ asset('assets/img/clients/pizzeria-napoli.jpg') }}" alt="Pizzeria Napoli"
+                    <img src="{{ asset('assets/img/saas/clients/safran.png') }}" alt="Pizzeria Napoli"
                         style="height:44px;border-radius:10px;border:1px solid var(--border);box-shadow:0 .35rem .9rem rgba(0,0,0,.06);background:#fff"
                         loading="lazy">
-                    <img src="{{ asset('assets/img/clients/hotel-oasis.jpg') }}" alt="Hotel Oasis"
+                    <img src="{{ asset('assets/img/saas/clients/horizon.png') }}" alt="Hotel Oasis"
                         style="height:44px;border-radius:10px;border:1px solid var(--border);box-shadow:0 .35rem .9rem rgba(0,0,0,.06);background:#fff"
                         loading="lazy">
-                    <img src="{{ asset('assets/img/clients/bakery-mariem.jpg') }}" alt="Boulangerie Mariem"
-                        style="height:44px;border-radius:10px;border:1px solid var(--border);box-shadow:0 .35rem .9rem rgba(0,0,0,.06);background:#fff"
-                        loading="lazy">
-                    <img src="{{ asset('assets/img/clients/restaurant-cedre.jpg') }}" alt="Restaurant Cèdre"
-                        style="height:44px;border-radius:10px;border:1px solid var(--border);box-shadow:0 .35rem .9rem rgba(0,0,0,.06);background:#fff"
-                        loading="lazy">
-                    <img src="{{ asset('assets/img/clients/cafe-zen.jpg') }}" alt="Café Zen"
+                    <img src="{{ asset('assets/img/saas/clients/mariem.png') }}" alt="Boulangerie Mariem"
                         style="height:44px;border-radius:10px;border:1px solid var(--border);box-shadow:0 .35rem .9rem rgba(0,0,0,.06);background:#fff"
                         loading="lazy">
                 </div>
@@ -1184,8 +1177,7 @@
                 <div class="col-lg-4">
                     <div class="footer-card h-100">
                         <div class="footer-brand mb-2">
-                            <img src="{{ asset('assets/img/saas/logo_with_words.png') }}" alt="QRevo">
-                            <strong>QRevo</strong>
+                            <img src="{{ asset('assets/img/saas/qrevo_under.png') }}" alt="QRevo">
                         </div>
                         <p class="small text-muted mb-3">
                             Le menu digital moderne pour restaurants, cafés et hôtels. QR personnalisés, multilingue,

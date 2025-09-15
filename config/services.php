@@ -34,9 +34,10 @@ return [
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
     ],
-     'qresto' => [
-        'base_url' => env('QRESTO_BASE_URL', 'https://qresto.foxirent.com/api'),
-        'token'    => env('QRESTO_API_TOKEN'),
+    'qrevo' => [
+        'base_url' => env('QREVO_BASE_URL', 'https://client.qrevo.app/api'),
+        'token'    => env('QREVO_API_TOKEN'),
+        'business_id'    => env('QREVO_BUSINESS_ID'),
     ],
 
 ];

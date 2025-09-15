@@ -1,48 +1,35 @@
 <?php
 
-use App\Http\Controllers\LandingController;
+use App\Http\Controllers\AdminAuthController;
+use App\Http\Controllers\OrderController;
+use App\Http\Controllers\PosAuthController;
 use App\Http\Controllers\RestaurantMenuController;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-/* Static page you already had */
+// Keep ONLY the page views here (they can use web guard if you like)
+Route::get('/pos', [RestaurantMenuController::class, 'index']);
 
-Route::get('/', [LandingController::class, 'index']);
-//blog
-Route::get('/privacy', function() {
-    return view('pages.privacy');
+
+
+// Admin login (session)
+Route::get('/admin/login', [AdminAuthController::class, 'showLogin'])->name('admin.login');
+Route::post('/admin/login', [AdminAuthController::class, 'login']);
+Route::post('/admin/logout', [AdminAuthController::class, 'logout'])->middleware('auth:web');
+
+// Session "me" endpoint for admin SPA
+Route::get('/api/admin/me', fn(Request $r) => $r->user())
+    ->middleware('auth:web');
+
+// Lock down the admin UI
+Route::get('/orders-admin', [RestaurantMenuController::class, 'getAdminPage'])
+    ->middleware(['auth:web','admin']);
+
+
+Route::middleware('auth:web')->prefix('admin')->group(function () {
+    Route::get('/orders',  [OrderController::class, 'index']);   // list (supports your query params)
+    Route::get('/orders/{order}', [OrderController::class, 'show']);
+    Route::get('/cashiers', [PosAuthController::class, 'listCashiers']);
 });
-// Route::get('/blog', function() {
-//     return view('pages.blog');
-// });
-// Route::get('/rihla', function() {
-//     return view('rihla');
-// });
-// Route::get('/bakery', function() {
-//     return view('bakery');
-// });
-// Route::get('/bakery_2', function() {
-//     return view('bakery_2');
-// });
-// Route::get('/bakery_2_hero_2', function() {
-//     return view('bakery_2_hero_2');
-// });
-// Route::get('/bakery_blog', function() {
-//     return view('bakery_blog');
-// });
-// Route::get('/bakery_blog_post', function() {
-//     return view('bakery_blog_post');
-// });
-// Route::get('/bakery_story', function() {
-//     return view('bakery_story');
-// });
-// Route::get('/bakery_menu', function() {
-//     return view('bakery_menu');
-// });
 
-Route::get('/menu/{uuid}', [RestaurantMenuController::class, 'show'])
-    ->whereUuid('uuid')    
-    ->name('menu.show');
-
-Route::get('/menu/{uuid}/agent', [RestaurantMenuController::class, 'showAgentMode'])
-    ->whereUuid('uuid')    
-    ->name('menu.agent.show');
+Route::get('/login', fn() => redirect('/admin/login'))->name('login');

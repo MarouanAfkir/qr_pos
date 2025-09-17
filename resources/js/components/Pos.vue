@@ -192,6 +192,7 @@
                     </div>
 
                     <!-- 2) Search + QR -->
+                    <!-- 2) Search + QR -->
                     <div class="search-row">
                         <input
                             id="posSearch"
@@ -201,7 +202,11 @@
                             aria-label="Search items…"
                             v-model.trim="searchQueryRaw"
                             @input="debouncedSearch"
+                            :readonly="isTouch"
+                            :inputmode="isTouch ? 'none' : null"
+                            @focus="isTouch && (showSearchKb = true)"
                         />
+
                         <div class="import-wrap">
                             <button
                                 class="btn btn-sub"
@@ -211,8 +216,30 @@
                             >
                                 <i class="fa-solid fa-qrcode"></i>
                             </button>
+
+                            <!-- ⌨️ toggle -->
+                            <button
+                                class="btn btn-sub"
+                                title="Keyboard"
+                                @click="showSearchKb = !showSearchKb"
+                                aria-controls="searchKb"
+                                :aria-expanded="showSearchKb ? 'true' : 'false'"
+                            >
+                                <i class="fa-solid fa-keyboard"></i>
+                            </button>
                         </div>
                     </div>
+
+                    <!-- Keyboard tray -->
+                    <SearchKeyboard
+                        id="searchKb"
+                        v-if="showSearchKb"
+                        v-model="searchQueryRaw"
+                        :rtl="isRTL"
+                        @update:modelValue="handleKbInput"
+                        @enter="submitSearch"
+                        @close="showSearchKb = false"
+                    />
 
                     <!-- 3) Categories (white card buttons) -->
                     <div class="categories-scroll cats-list" id="catPills">
@@ -1418,6 +1445,8 @@
 </template>
 
 <script>
+import SearchKeyboard from "./SearchKeyboard.vue";
+
 export default {
     name: "PosView",
     props: {
@@ -1437,8 +1466,14 @@ export default {
         meEndpoint: { type: String, default: "/api/pos/me" },
         logoutEndpoint: { type: String, default: "/api/pos/logout" },
     },
+    components: {
+        SearchKeyboard,
+    },
     data() {
         return {
+            showSearchKb: false,
+            isTouch: false,
+
             language: this.defaultLanguage || "en",
             orderType: "dinein",
             currentTable: null,
@@ -1729,12 +1764,13 @@ export default {
         } catch (_) {
             this.numberFmt = null;
         }
+        this.isTouch = "ontouchstart" in window || navigator.maxTouchPoints > 0;
 
         this.initAuth();
         this.loadCartState();
         this.loadPendingOrders();
     },
-   
+
     watch: {
         cartLines: {
             deep: true,
@@ -1762,7 +1798,15 @@ export default {
         },
     },
     methods: {
-       
+        handleKbInput(val) {
+            this.searchQueryRaw = val;
+            this.debouncedSearch();
+        },
+        submitSearch() {
+            // optional: force immediate search & close
+            this.searchQuery = this.searchQueryRaw;
+            this.showSearchKb = false;
+        },
         // Friendly emoji if no image available
         iconForCategory(name = "") {
             const n = name.toLowerCase();
@@ -1828,7 +1872,6 @@ export default {
                 el.remove();
             }, 3000);
         },
-
 
         debouncedSearch() {
             clearTimeout(this._searchT);
@@ -3059,7 +3102,6 @@ body {
     display: none;
 }
 
-
 .categories-scroll::before,
 .categories-scroll::after {
     content: "";
@@ -3702,7 +3744,6 @@ body {
     border-radius: 999px;
 }
 
-
 /* --- Category cards (white button w/ left symbol, right text) --- */
 .cats-list {
     gap: 0.6rem;
@@ -3751,7 +3792,7 @@ body {
 .cats-list .cat-avatar {
     width: 44px; /* tiny bump for presence */
     height: 44px;
-      padding: 3px;                       /* ← shows the bg as a frame */
+    padding: 3px; /* ← shows the bg as a frame */
 
     border-radius: 0.8rem; /* rounded image */
     overflow: hidden;
@@ -3827,16 +3868,15 @@ body {
 
 /* Remove focus ring/glow on the search input */
 .pos-search {
-  -webkit-appearance: none;
-  appearance: none;
+    -webkit-appearance: none;
+    appearance: none;
 }
 
 .pos-search:focus,
 .pos-search:active,
 .pos-search:focus-visible {
-  box-shadow: none !important;
-  outline: none !important;
-  border-color: #e4f4ea !important; /* same as idle state */
+    box-shadow: none !important;
+    outline: none !important;
+    border-color: #e4f4ea !important; /* same as idle state */
 }
-
 </style>

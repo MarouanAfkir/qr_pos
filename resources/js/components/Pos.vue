@@ -580,6 +580,7 @@
             tabindex="-1"
             aria-modal="true"
             role="dialog"
+            @click.self="closeCfg()"
         >
             <div class="modal-dialog modal-dialog-centered modal-xl cfg-modal">
                 <div class="modal-content">

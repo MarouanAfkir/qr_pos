@@ -30,6 +30,7 @@ class RestaurantMenuController extends Controller
             ->get("{$baseUrl}/restaurants/{$uuid}/categories")
             ->throw()
             ->json();
+            
 
         /* -------- Render Blade -------- */
         return view('pos', [

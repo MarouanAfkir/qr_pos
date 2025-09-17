@@ -214,23 +214,65 @@
                         </div>
                     </div>
 
-                    <!-- 3) Categories (h-scroll; hidden scrollbar; extra Y padding) -->
-                    <div class="categories-scroll" id="catPills">
+                    <!-- 3) Categories (white card buttons) -->
+                    <div class="categories-scroll cats-list" id="catPills">
+                        <!-- All -->
                         <button
-                            class="btn"
+                            class="cat-btn"
                             :class="{ active: activeCat === '__all' }"
                             @click="setCat('__all')"
+                            :aria-pressed="activeCat === '__all'"
                         >
-                            All
+                            <div class="cat-avatar">
+                                <img
+                                    v-if="categoryThumb(null)"
+                                    :src="categoryThumb(null)"
+                                    alt="All"
+                                />
+                                <div v-else class="cat-fallback">
+                                    {{ iconForCategory("All") }}
+                                </div>
+                            </div>
+                            <div class="cat-text">
+                                <span class="cat-name">All</span>
+                                <small
+                                    class="cat-count"
+                                    v-if="totalItemsCount"
+                                    >{{ totalItemsCount }}</small
+                                >
+                            </div>
                         </button>
+
+                        <!-- Each category -->
                         <button
                             v-for="cat in normalizedCategories"
                             :key="cat.slug"
-                            class="btn"
+                            class="cat-btn"
                             :class="{ active: activeCat === cat.slug }"
                             @click="setCat(cat.slug)"
+                            :aria-pressed="activeCat === cat.slug"
+                            :title="cat.name"
                         >
-                            {{ cat.name }}
+                            <div class="cat-avatar">
+                                <img
+                                    v-if="categoryThumb(cat)"
+                                    :src="categoryThumb(cat)"
+                                    :alt="cat.name"
+                                />
+                                <div v-else class="cat-fallback">
+                                    {{ iconForCategory(cat.name) }}
+                                </div>
+                            </div>
+                            <div class="cat-text">
+                                <span class="cat-name text-truncate">{{
+                                    cat.name
+                                }}</span>
+                                <small
+                                    class="cat-count"
+                                    v-if="catCounts[cat.slug]"
+                                    >{{ catCounts[cat.slug] }}</small
+                                >
+                            </div>
                         </button>
                     </div>
                 </div>
@@ -1390,7 +1432,6 @@ export default {
         },
         logoFallback: { type: String, default: "/assets/img/logo/logo.svg" },
         ordersEndpoint: { type: String, default: "/api/orders" },
-        csrfEndpoint: { type: String, default: "/sanctum/csrf-cookie" },
         loginEndpoint: { type: String, default: "/api/pos/login" },
         meEndpoint: { type: String, default: "/api/pos/me" },
         logoutEndpoint: { type: String, default: "/api/pos/logout" },
@@ -1449,10 +1490,21 @@ export default {
             authedUser: null,
             loginForm: { code: "", pin: "" },
             loginError: "",
-            _csrfBootstrapped: false,
         };
     },
     computed: {
+        // ...existing
+        totalItemsCount() {
+            return this.normalizedItems.length || 0;
+        },
+        catCounts() {
+            const map = {};
+            this.normalizedItems.forEach((it) => {
+                const s = this.slug(it.categoryName);
+                map[s] = (map[s] || 0) + 1;
+            });
+            return map;
+        },
         restaurantName() {
             return this.restaurant?.name || "Restaurant";
         },
@@ -1477,19 +1529,29 @@ export default {
             return !!this.authedUser;
         },
 
-        themeIcon() {
-            return document.documentElement.dataset.theme === "dark"
-                ? "fa-solid fa-sun"
-                : "fa-solid fa-moon";
-        },
-        themeTitle() {
-            return document.documentElement.dataset.theme === "dark"
-                ? "Switch to light"
-                : "Switch to dark";
+        catMeta() {
+            // Build per-category {count, img} from items
+            const meta = {};
+            const touch = (slug, img) => {
+                if (!meta[slug]) meta[slug] = { count: 0, img: "" };
+                meta[slug].count++;
+                if (!meta[slug].img && img) meta[slug].img = img; // first image as thumb
+            };
+            (this.normalizedItems || []).forEach((it) => {
+                const slug = this.slug(it.categoryName);
+                touch(slug, it.image);
+                touch("__all", it.image);
+            });
+            return meta;
         },
 
         normalizedCategories() {
-            if (Array.isArray(this.categories) && this.categories.length) {
+            // Prefer provided categories; fall back to categories derived from items
+            const fromProps =
+                Array.isArray(this.categories) && this.categories.length;
+            const meta = this.catMeta;
+
+            if (fromProps) {
                 return this.categories.map((c, idx) => {
                     const name =
                         (c.current_translation && c.current_translation.name) ||
@@ -1501,9 +1563,20 @@ export default {
                             ? String(c.slug)
                             : this.slug(name);
                     const id = c.id ?? c.uuid ?? slug;
-                    return { id, name, slug };
+                    // try common image fields
+                    const catImg =
+                        c.image ||
+                        c.photo ||
+                        c.thumbnail ||
+                        c.cover ||
+                        meta[slug]?.img ||
+                        "";
+                    const count = meta[slug]?.count || 0;
+                    return { id, name, slug, image: catImg, count };
                 });
             }
+
+            // derive from items if no prop
             const map = {};
             (this.articles || []).forEach((it) => {
                 const c = it && it.category;
@@ -1514,14 +1587,17 @@ export default {
                             c.name)) ||
                     null;
                 if (rawName) {
-                    const s = this.slug(rawName);
-                    if (!map[s]) map[s] = rawName;
+                    const slug = this.slug(rawName);
+                    if (!map[slug]) map[slug] = rawName;
                 }
             });
+
             return Object.entries(map).map(([slug, name]) => ({
                 id: slug,
                 name,
                 slug,
+                image: meta[slug]?.img || "",
+                count: meta[slug]?.count || 0,
             }));
         },
 
@@ -1656,11 +1732,8 @@ export default {
         this.initAuth();
         this.loadCartState();
         this.loadPendingOrders();
-        window.addEventListener("keydown", this.keyShortcuts);
     },
-    beforeUnmount() {
-        window.removeEventListener("keydown", this.keyShortcuts);
-    },
+   
     watch: {
         cartLines: {
             deep: true,
@@ -1688,6 +1761,24 @@ export default {
         },
     },
     methods: {
+       
+        // Friendly emoji if no image available
+        iconForCategory(name = "") {
+            const n = name.toLowerCase();
+            if (n.includes("pizza")) return "🍕";
+            if (n.includes("burger")) return "🍔";
+            if (
+                n.includes("drink") ||
+                n.includes("juice") ||
+                n.includes("boisson")
+            )
+                return "🥤";
+            if (n.includes("dessert") || n.includes("sweet")) return "🍰";
+            if (n.includes("salad")) return "🥗";
+            if (n.includes("coffee") || n.includes("café")) return "☕";
+            if (n.includes("sandwich")) return "🥪";
+            return "🍽️";
+        },
         authHeaders() {
             return this.authToken
                 ? { Authorization: "Bearer " + this.authToken }
@@ -1737,29 +1828,6 @@ export default {
             }, 3000);
         },
 
-        keyShortcuts(e) {
-            if (e.key === "/") {
-                e.preventDefault();
-                document.getElementById("posSearch")?.focus();
-            }
-            if (e.key.toLowerCase() === "p") {
-                if (this.isAuthed) this.openPay();
-            }
-            if (e.key.toLowerCase() === "h") {
-                if (this.isAuthed) this.holdOrder();
-            }
-            if (e.key === "Escape") {
-                this.showCfgModal = false;
-                this.showPayModal = false;
-                this.showTables = false;
-            }
-        },
-
-        toggleTheme() {
-            const root = document.documentElement;
-            root.dataset.theme = root.dataset.theme === "dark" ? "" : "dark";
-            localStorage.setItem("pos_theme", root.dataset.theme);
-        },
 
         debouncedSearch() {
             clearTimeout(this._searchT);
@@ -2654,6 +2722,15 @@ export default {
             });
             return true;
         },
+        categoryThumb(cat) {
+            // Accepts a category object or null for "All"
+            const ph = this.placeholder; // already in props
+            if (!cat) {
+                // "All" – use first seen item image if any
+                return this.catMeta["__all"]?.img || ph;
+            }
+            return cat.image || this.catMeta[cat.slug]?.img || ph;
+        },
         menuIndex() {
             const idx = {};
             this.normalizedItems.forEach((it) => {
@@ -2691,6 +2768,8 @@ export default {
     --accent: #22c55e;
     --mint: #e9f8ef;
     --pearl: #f7fdf9;
+    --cat-active-border: #7fd5b8; /* visible mint border on select (light) */
+    --cat-avatar-bg: #eaf7f0; /* visible soft mint */
 }
 :root[data-theme="dark"] {
     --soft: #0b1220;
@@ -2703,6 +2782,7 @@ export default {
     --brand2: #0c1a13;
     --mint: #0f1f17;
     --pearl: #0b1510;
+    --cat-active-border: #34d399; /* brighter in dark */
 }
 
 * {
@@ -2950,13 +3030,7 @@ body {
     gap: 0.35rem;
     align-items: center;
 }
-.import-wrap .form-control {
-    border-radius: 0.6rem;
-    border: 1px solid #e0f1e7;
-    height: 40px;
-    font-size: 0.92rem;
-    min-width: 230px;
-}
+
 .btn-sub {
     border: 1px solid #e4f4ea;
     background: #fff;
@@ -2983,22 +3057,8 @@ body {
 .categories-scroll::-webkit-scrollbar {
     display: none;
 }
-.categories-scroll .btn {
-    border-radius: 999px;
-    border: 1px solid #e4f4ea;
-    background: #fff;
-    color: #124b2d;
-    font-weight: 700;
-    padding: 0.35rem 0.85rem;
-    position: relative;
-    flex: 0 0 auto;
-}
-.categories-scroll .btn.active {
-    background: #eaf7f0;
-    border-color: #cdebdc;
-    color: #1f2937;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
-}
+
+
 .categories-scroll::before,
 .categories-scroll::after {
     content: "";
@@ -3579,4 +3639,203 @@ body {
     border-radius: 0.6rem;
     margin-top: 0.4rem;
 }
+/* === Category image cards inside .categories-scroll === */
+.categories-scroll {
+    gap: 0.55rem;
+    padding: 0.75rem 0.2rem;
+}
+
+.cat-thumb {
+    position: relative;
+    width: 150px;
+    height: 86px;
+    border-radius: 14px;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    background: #fff;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+}
+@media (max-width: 576px) {
+    .cat-thumb {
+        width: 132px;
+        height: 78px;
+    }
+}
+
+.cat-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    display: block;
+    filter: saturate(1.05);
+}
+
+.cat-overlay {
+    position: absolute;
+    inset: auto 0 0 0;
+    padding: 0.4rem 0.55rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.4rem;
+    background: linear-gradient(
+        180deg,
+        rgba(0, 0, 0, 0) 0%,
+        rgba(0, 0, 0, 0.55) 100%
+    );
+    color: #fff;
+}
+.cat-name {
+    font-weight: 800;
+    font-size: 0.9rem;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+    max-width: 100px;
+}
+.cat-count {
+    font-size: 0.75rem;
+    font-weight: 800;
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    padding: 0.05rem 0.45rem;
+    border-radius: 999px;
+}
+
+
+/* --- Category cards (white button w/ left symbol, right text) --- */
+.cats-list {
+    gap: 0.6rem;
+    padding-block: 0.7rem; /* more comfy touch target */
+}
+
+/* card */
+.cats-list .cat-btn {
+    --ring: var(--ring);
+    --line: var(--line);
+    --bg: #fff;
+
+    display: inline-flex;
+    align-items: center;
+    gap: 0.7rem;
+    padding: 0.65rem 0.95rem;
+    border: 2px solid transparent; /* ⬅️ was 1.5px solid var(--line) */
+    background: var(--bg);
+    border-radius: 1rem;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.04);
+    transition: transform 0.12s ease, box-shadow 0.12s ease,
+        border-color 0.12s ease, background 0.12s ease;
+    white-space: nowrap;
+    flex: 0 0 auto;
+    text-shadow: none;
+}
+
+.cats-list .cat-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08);
+    border-color: #d3efe2; /* subtle hint on hover */
+}
+
+.cats-list .cat-btn.active {
+    background: var(--cat-active-bg, #f3faf6);
+    border-color: var(--cat-active-border); /* ✅ now clearly visible */
+    box-shadow: 0 0 0 2.5px var(--ring), 0 8px 20px rgba(15, 139, 76, 0.12);
+}
+
+.cats-list .cat-btn:focus-visible {
+    outline: 3px solid var(--ring);
+    outline-offset: 2px;
+}
+
+/* left thumbnail */
+.cats-list .cat-avatar {
+    width: 44px; /* tiny bump for presence */
+    height: 44px;
+      padding: 3px;                       /* ← shows the bg as a frame */
+
+    border-radius: 0.8rem; /* rounded image */
+    overflow: hidden;
+    border: 1px solid var(--line);
+    background: var(--cat-avatar-bg);
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+}
+
+.cats-list .cat-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.cats-list .cat-fallback {
+    font-size: 1.15rem;
+    line-height: 1;
+}
+
+/* right text */
+.cats-list .cat-text {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    min-width: 0; /* allow truncation */
+}
+
+.cats-list .cat-name {
+    font-weight: 800;
+    color: var(--ink);
+    max-width: 14ch;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-shadow: none; /* ⬅️ make sure: no text shadow */
+}
+
+.cats-list .cat-count {
+    color: var(--muted);
+    border: 1px solid var(--line);
+    padding: 0.06rem 0.45rem;
+    border-radius: 999px;
+    font-weight: 700;
+    background: #fff;
+    text-shadow: none; /* ⬅️ no text shadow */
+}
+
+/* theme tuning */
+:root {
+    --cat-active-bg: #f3faf6; /* ⬅️ light, friendly active bg (light mode) */
+}
+
+:root[data-theme="dark"] .cats-list .cat-btn {
+    --bg: var(--card);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+:root[data-theme="dark"] .cats-list .cat-avatar {
+    background: #0f172a;
+    border-color: #1f2a44;
+}
+
+/* Dark active state gets a soft tint instead of pure white */
+:root[data-theme="dark"] {
+    --cat-active-bg: rgba(
+        34,
+        197,
+        94,
+        0.1
+    ); /* ⬅️ subtle brand-tinted bg in dark */
+}
+
+/* Remove focus ring/glow on the search input */
+.pos-search {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.pos-search:focus,
+.pos-search:active,
+.pos-search:focus-visible {
+  box-shadow: none !important;
+  outline: none !important;
+  border-color: #e4f4ea !important; /* same as idle state */
+}
+
 </style>

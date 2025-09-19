@@ -1640,9 +1640,6 @@
                             {{ authLoading ? "Signing in…" : "Sign in" }}
                         </button>
                     </div>
-                    <div class="text-center small text-muted mt-2">
-                        Protected with Laravel Sanctum (stateful SPA)
-                    </div>
                 </form>
             </div>
         </div>

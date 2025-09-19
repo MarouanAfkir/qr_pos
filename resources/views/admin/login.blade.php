@@ -226,7 +226,7 @@
             </div>
           @endif
 
-          <form method="POST" action="{{ route('login') }}" novalidate>
+          <form method="POST" action="{{ route('admin.login') }}" novalidate>
             @csrf
 
             <div class="mb-3">

@@ -30,7 +30,7 @@ class RestaurantMenuController extends Controller
             ->get("{$baseUrl}/restaurants/{$uuid}/categories")
             ->throw()
             ->json();
-            
+
 
         /* -------- Render Blade -------- */
         return view('pos', [
@@ -43,5 +43,16 @@ class RestaurantMenuController extends Controller
     {
         /* -------- Render Blade -------- */
         return view('backoffice');
+    }
+    public function dailyReportBlade()
+    {
+        // Pass restaurant info if you need it for the header
+        $restaurant = [
+            'name'    => config('app.name', 'Restaurant'),
+            'address' => '',
+            'logo'    => '/assets/img/logo/logo.svg',
+            'settings' => ['tagline' => 'Fresh • Local • Delicious'],
+        ];
+        return view('pos-daily-report', compact('restaurant'));
     }
 }

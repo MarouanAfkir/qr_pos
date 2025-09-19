@@ -1,6 +1,7 @@
 <?php
 
 
+use App\Http\Controllers\API\PosController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 use App\Http\Controllers\PosAuthController;
@@ -19,4 +20,5 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('orders', OrderController::class)->only(['index', 'store', 'show', 'destroy']);
     Route::post('orders/{order}/payments', [OrderController::class, 'addPayment']);
     Route::patch('orders/{order}/status',  [OrderController::class, 'updateStatus']);
+    Route::get('/pos/orders/today', [PosController::class, 'ordersToday'])->name('api.pos.orders.today');
 });

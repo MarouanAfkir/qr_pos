@@ -9,7 +9,8 @@ use Illuminate\Support\Facades\Route;
 
 // Keep ONLY the page views here (they can use web guard if you like)
 Route::get('/pos', [RestaurantMenuController::class, 'index']);
-
+Route::get('/pos/reports/daily', [RestaurantMenuController::class, 'dailyReportBlade'])
+    ->name('pos.reports.daily');
 
 
 // Admin login (session)
@@ -23,7 +24,7 @@ Route::get('/api/admin/me', fn(Request $r) => $r->user())
 
 // Lock down the admin UI
 Route::get('/orders-admin', [RestaurantMenuController::class, 'getAdminPage'])
-    ->middleware(['auth:web','admin']);
+    ->middleware(['auth:web', 'admin']);
 
 
 Route::middleware('auth:web')->prefix('admin')->group(function () {

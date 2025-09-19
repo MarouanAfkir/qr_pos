@@ -6,6 +6,10 @@ window.Vue = Vue;
 // Example global component
 import Pos from "./components/Pos.vue";
 Vue.component("pos", Pos);
+
+import PosCashierDaily from "./components/PosCashierDaily.vue";
+Vue.component("pos-daily-report", PosCashierDaily);
+
 import OrdersAdmin from "./components/OrdersAdmin.vue";
 Vue.component("orders-admin", OrdersAdmin);
 

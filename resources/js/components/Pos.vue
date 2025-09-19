@@ -367,15 +367,6 @@
                             style="color: var(--brand)"
                         ></i
                         >Current Order
-                        <span
-                            class="badge-pill ms-1"
-                            style="background: #fff; border: 1px solid #e4f4ea"
-                        >
-                            Type:
-                            <span id="orderTypeBadge">{{
-                                orderType.toUpperCase()
-                            }}</span>
-                        </span>
                     </div>
                     <div class="d-flex gap-1">
                         <button
@@ -393,6 +384,18 @@
                             :disabled="saving || !isAuthed"
                         >
                             <i class="fa-solid fa-trash-can me-1"></i>Clear
+                        </button>
+                        <button
+                            class="btn btn-sub btn-sm position-relative"
+                            @click="showHeldModal = true"
+                            :disabled="saving || !isAuthed"
+                            title="View held orders"
+                        >
+                            <i class="fa-solid fa-clock-rotate-left me-1"></i
+                            >Held
+                            <span class="badge-pill ms-1">{{
+                                parkedOrders.length
+                            }}</span>
                         </button>
                     </div>
                 </div>
@@ -545,7 +548,7 @@
                     </div>
 
                     <!-- Parked orders -->
-                    <div class="parked">
+                    <div class="parked" v-if="false">
                         <div class="fw-bold mb-2">
                             <i class="fa-solid fa-clock-rotate-left me-1"></i
                             >Held Orders
@@ -555,6 +558,10 @@
                                 v-for="(o, i) in parkedOrders"
                                 :key="o.id + '-' + o.time"
                                 class="order-chip"
+                                :class="{
+                                    'is-loaded':
+                                        activeParkedKey === (o._key || o.time),
+                                }"
                             >
                                 <div>
                                     <div class="fw-bold">
@@ -563,29 +570,36 @@
                                         <span v-if="o.table">
                                             • T{{ o.table }}</span
                                         >
+                                        <span
+                                            v-if="
+                                                activeParkedKey ===
+                                                (o._key || o.time)
+                                            "
+                                            class="badge-pill ms-1"
+                                            >Loaded</span
+                                        >
                                     </div>
                                     <div class="small text-muted">
                                         {{ new Date(o.time).toLocaleString() }}
                                     </div>
                                 </div>
                                 <div class="d-flex gap-1">
-                                    <span class="fw-bold me-2">{{
-                                        money(o.total)
-                                    }}</span>
+                                    <!-- no amount here -->
                                     <button
                                         class="btn btn-sm btn-sub"
                                         @click="resumeParked(i)"
                                     >
-                                        Resume
+                                        Load
                                     </button>
                                     <button
                                         class="btn btn-sm btn-danger-soft"
-                                        @click="deleteParked(i)"
+                                        @click="deleteParkedByKey(parkKey(o))"
                                     >
                                         Delete
                                     </button>
                                 </div>
                             </div>
+
                             <div
                                 v-if="!parkedOrders.length"
                                 class="text-muted small"
@@ -1173,6 +1187,197 @@
             class="modal-backdrop fade show"
             @click="closeScan()"
         ></div>
+        <!-- ===== Held Orders Modal ===== -->
+        <!-- ===== Held Orders Modal (enhanced) ===== -->
+        <div
+            class="modal fade held-modal"
+            :class="{ show: showHeldModal }"
+            style="display: block"
+            v-if="showHeldModal"
+            tabindex="-1"
+            aria-modal="true"
+            role="dialog"
+            @click.self="showHeldModal = false"
+        >
+            <div class="modal-dialog modal-dialog-centered modal-xl">
+                <div class="modal-content held-modal-content">
+                    <div class="modal-header held-modal-header">
+                        <h5 class="modal-title d-flex align-items-center gap-2">
+                            <i class="fa-solid fa-box-archive"></i>
+                            Held Orders
+                            <span class="badge-pill held-count ms-1">{{
+                                filteredHeld.length
+                            }}</span>
+                        </h5>
+                        <button
+                            type="button"
+                            class="btn-close"
+                            @click="showHeldModal = false"
+                            aria-label="Close"
+                        ></button>
+                    </div>
+
+                    <div class="modal-body">
+                        <!-- Search row -->
+                        <div class="held-toolbar">
+                            <div class="held-search">
+                                <i class="fa-solid fa-magnifying-glass"></i>
+                                <input
+                                    class="held-search-input"
+                                    placeholder="Search by type, table or item name…"
+                                    v-model.trim="heldQuery"
+                                    aria-label="Search held orders"
+                                />
+                            </div>
+
+                            <div class="held-legend">
+                                <span class="legend-dot legend-loaded"></span>
+                                Loaded
+                                <span class="legend-sep">•</span>
+                                <span class="legend-dot legend-dinein"></span>
+                                Dine-in
+                                <span class="legend-sep">•</span>
+                                <span class="legend-dot legend-other"></span>
+                                Other types
+                            </div>
+                        </div>
+
+                        <!-- Empty state -->
+                        <div v-if="!filteredHeld.length" class="held-empty">
+                            <div class="held-empty-icon">
+                                <i class="fa-regular fa-clock"></i>
+                            </div>
+                            <div class="held-empty-title">No held orders</div>
+                            <div class="held-empty-sub">
+                                Use “Hold” to park the current order.
+                            </div>
+                        </div>
+
+                        <!-- Cards grid (max 2 per row) -->
+                        <div class="held-grid-modern" v-else>
+                            <div
+                                v-for="o in filteredHeld"
+                                :key="o._key || o.time"
+                                class="held-card-modern"
+                                :class="[
+                                    (o.type || '') === 'dinein'
+                                        ? 'is-dinein'
+                                        : 'is-other',
+                                    activeParkedKey === (o._key || o.time)
+                                        ? 'is-loaded'
+                                        : '',
+                                ]"
+                                role="button"
+                                tabindex="0"
+                                @click="resumeParkedByKey(parkKey(o))"
+                                @keydown.enter.prevent="
+                                    resumeParkedByKey(parkKey(o))
+                                "
+                                @keydown.space.prevent="
+                                    resumeParkedByKey(parkKey(o))
+                                "
+                                :aria-label="`Load held order #${o.id || ''}`"
+                            >
+                                <!-- top row -->
+                                <div class="held-card-top">
+                                    <div class="held-id">#{{ o.id }}</div>
+                                    <div class="held-type">
+                                        <span class="chip-type">
+                                            {{ (o.type || "").toUpperCase() }}
+                                            <span v-if="o.table"
+                                                >• T{{ o.table }}</span
+                                            >
+                                        </span>
+                                        <span
+                                            v-if="
+                                                activeParkedKey ===
+                                                (o._key || o.time)
+                                            "
+                                            class="chip-loaded"
+                                            >Loaded</span
+                                        >
+                                    </div>
+                                </div>
+
+                                <!-- meta -->
+                                <div class="held-meta small">
+                                    <span class="meta-dot">
+                                        <i class="fa-regular fa-clock"></i>
+                                        {{
+                                            new Date(
+                                                o.time
+                                            ).toLocaleTimeString()
+                                        }}
+                                    </span>
+                                    <span class="meta-dot">{{
+                                        timeAgo(o.time)
+                                    }}</span>
+                                    <span class="meta-dot">
+                                        <i class="fa-solid fa-layer-group"></i>
+                                        {{ itemsCount(o) }} item(s)
+                                    </span>
+                                </div>
+
+                                <!-- items -->
+                                <ul class="held-items">
+                                    <li
+                                        v-for="(ln, idx) in o.lines"
+                                        :key="idx"
+                                        class="held-item"
+                                    >
+                                        <span
+                                            class="held-item-name text-truncate"
+                                            >{{ ln.name }}</span
+                                        >
+                                        <span class="held-item-qty"
+                                            >× {{ ln.qty }}</span
+                                        >
+                                    </li>
+                                </ul>
+
+                                <!-- actions -->
+                                <div class="held-actions-modern">
+                                    <button
+                                        class="btn btn-danger-soft btn-sm"
+                                        title="Delete held order"
+                                        @click.stop="
+                                            deleteParkedByKey(parkKey(o))
+                                        "
+                                    >
+                                        <i
+                                            class="fa-solid fa-trash-can me-1"
+                                        ></i
+                                        >Delete
+                                    </button>
+                                    <div class="ghost-spacer"></div>
+                                    <div class="cta-hint">
+                                        <span>Click to load</span>
+                                        <i
+                                            class="fa-solid fa-arrow-right-long"
+                                        ></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer held-modal-footer">
+                        <button
+                            class="btn btn-sub"
+                            @click="showHeldModal = false"
+                        >
+                            Close
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div
+            v-if="showHeldModal"
+            class="modal-backdrop fade show"
+            @click="showHeldModal = false"
+        ></div>
 
         <!-- ===== Offcanvas: Tables ===== -->
         <div
@@ -1189,11 +1394,6 @@
                 <h5 id="tablesCanvasLabel">
                     <i class="fa-solid fa-chair me-2"></i>Select Table
                 </h5>
-                <button
-                    type="button"
-                    class="btn-close text-reset"
-                    @click="closeTables()"
-                ></button>
             </div>
             <div class="offcanvas-body">
                 <div
@@ -1213,16 +1413,35 @@
 
                 <div class="table-grid" id="tablesGrid">
                     <div
-                        v-for="i in 40"
+                        v-for="i in 20"
                         :key="i"
                         class="table-card"
                         v-show="String(i).includes(tableSearch)"
-                        :class="{ active: String(currentTable) === String(i) }"
-                        :tabindex="orderType === 'dinein' ? 0 : -1"
+                        :class="{
+                            active: String(currentTable) === String(i),
+                            disabled:
+                                disabledTables.has(String(i)) &&
+                                String(currentTable) !== String(i),
+                        }"
+                        :tabindex="
+                            orderType === 'dinein' &&
+                            !(
+                                disabledTables.has(String(i)) &&
+                                String(currentTable) !== String(i)
+                            )
+                                ? 0
+                                : -1
+                        "
                         :style="{
                             opacity: orderType === 'dinein' ? 1 : 0.5,
                             pointerEvents:
-                                orderType === 'dinein' ? 'auto' : 'none',
+                                orderType === 'dinein' &&
+                                !(
+                                    disabledTables.has(String(i)) &&
+                                    String(currentTable) !== String(i)
+                                )
+                                    ? 'auto'
+                                    : 'none',
                         }"
                         role="button"
                         :aria-label="'Table ' + i"
@@ -1234,22 +1453,16 @@
                             <i class="fa-solid fa-chair"></i>
                         </div>
                         <div class="fw-bold">Table #{{ i }}</div>
-                        <small class="text-muted">Available</small>
+                        <small class="text-muted">
+                            {{
+                                String(currentTable) === String(i)
+                                    ? "Selected"
+                                    : disabledTables.has(String(i))
+                                    ? "Held"
+                                    : "Available"
+                            }}
+                        </small>
                     </div>
-                </div>
-            </div>
-            <div class="offcanvas-footer">
-                <div class="d-flex justify-content-between">
-                    <button
-                        class="btn btn-danger-soft"
-                        id="clearTable"
-                        @click="clearTable"
-                    >
-                        <i class="fa-solid fa-xmark me-1"></i>Clear Table
-                    </button>
-                    <button class="btn btn-main" @click="closeTables()">
-                        Done
-                    </button>
                 </div>
             </div>
         </div>
@@ -1471,6 +1684,10 @@ export default {
     },
     data() {
         return {
+            activeParkedKey: null, // which hold is currently loaded into the cart
+            showHeldModal: false, // modal visibility
+            heldQuery: "", // modal search
+
             showSearchKb: false,
             isTouch: false,
 
@@ -1518,7 +1735,8 @@ export default {
             showTables: false,
             tableSearch: "",
 
-            parkedOrders: this.getParked(),
+            storageScope: null,
+            parkedOrders: [],
             pendingOrders: [],
             authToken: localStorage.getItem("pos_token") || null,
             authReady: false,
@@ -1529,7 +1747,34 @@ export default {
         };
     },
     computed: {
-        // ...existing
+        disabledTables() {
+            const set = new Set();
+            if (this.currentTable != null) set.add(String(this.currentTable));
+            (this.parkedOrders || []).forEach((o) => {
+                if ((o.type || "") === "dinein" && o.table != null) {
+                    set.add(String(o.table));
+                }
+            });
+            return set;
+        },
+        filteredHeld() {
+            const q = (this.heldQuery || "").toLowerCase().trim();
+            const list = (this.parkedOrders || [])
+                .slice()
+                .sort((a, b) => Number(a.time || 0) - Number(b.time || 0));
+            if (!q) return list;
+            return list.filter((o) => {
+                const type = String(o.type || "").toLowerCase();
+                const table = String(o.table || "");
+                const items = (o.lines || [])
+                    .map((l) => String(l.name || "").toLowerCase())
+                    .join(" ");
+                return (
+                    type.includes(q) || table.includes(q) || items.includes(q)
+                );
+            });
+        },
+
         totalItemsCount() {
             return this.normalizedItems.length || 0;
         },
@@ -1769,6 +2014,36 @@ export default {
         this.initAuth();
         this.loadCartState();
         this.loadPendingOrders();
+        this.migrateHeldIds();
+
+        this.storageScope =
+            this.restaurant?.id ?? this.slug(this.restaurantName) ?? "rest";
+
+        // 2) Load parked orders now that the scope is stable
+        this.parkedOrders = this.getParked();
+
+        // 3) Optional: migrate from old/legacy keys if nothing found
+        if (!this.parkedOrders.length) {
+            const candidates = [
+                `pos_parked_orders:rest`,
+                `pos_parked_orders:${this.slug("Restaurant")}`,
+                // add any other historic patterns you used, if applicable
+            ];
+            for (const k of candidates) {
+                const raw = localStorage.getItem(k);
+                if (raw && raw !== "[]" && raw.trim() !== "") {
+                    try {
+                        const arr = JSON.parse(raw);
+                        if (Array.isArray(arr) && arr.length) {
+                            // write into the new, stable key and use it
+                            localStorage.setItem(this.PARK_KEY(), raw);
+                            this.parkedOrders = arr;
+                            break;
+                        }
+                    } catch (_) {}
+                }
+            }
+        }
     },
 
     watch: {
@@ -1798,6 +2073,77 @@ export default {
         },
     },
     methods: {
+        nextHoldNumber() {
+            const arr = this.parkedOrders || [];
+            if (!arr.length) return 1; // reinit to 1 when empty
+            // choose the smallest positive integer not currently used to avoid collisions
+            const used = new Set(arr.map((o) => Number(o.id || 0)));
+            let n = 1;
+            while (used.has(n)) n++;
+            return n;
+        },
+        migrateHeldIds() {
+            let changed = false;
+            this.parkedOrders.forEach((o) => {
+                if (!o.id) {
+                    o.id = this.getNextHeldId();
+                    changed = true;
+                }
+            });
+            if (changed) this.setParked(this.parkedOrders);
+        },
+        heldSeqKey() {
+            return this.stateKey("pos_held_id_seq");
+        },
+        readHeldSeq() {
+            try {
+                const n = Number(localStorage.getItem(this.heldSeqKey()) || 0);
+                return Number.isFinite(n) ? n : 0;
+            } catch (_) {
+                return 0;
+            }
+        },
+        writeHeldSeq(n) {
+            localStorage.setItem(this.heldSeqKey(), String(n));
+        },
+        peekNextHeldId() {
+            return this.readHeldSeq() + 1;
+        },
+        getNextHeldId() {
+            const next = this.readHeldSeq() + 1;
+            this.writeHeldSeq(next);
+            return next;
+        },
+        timeAgo(ts) {
+            try {
+                const diff = Math.max(0, Date.now() - Number(ts || 0));
+                const m = Math.floor(diff / 60000);
+                if (m < 1) return "just now";
+                if (m < 60) return `${m} min ago`;
+                const h = Math.floor(m / 60);
+                const rm = m % 60;
+                return rm ? `${h}h ${rm}m ago` : `${h}h ago`;
+            } catch (_) {
+                return "";
+            }
+        },
+        itemsCount(o) {
+            return (o.lines || []).reduce((a, l) => a + Number(l.qty || 0), 0);
+        },
+
+        parkKey(ord) {
+            return String(ord?._key || ord?.time || "");
+        },
+        removeParkedByKey(key) {
+            const i = this.parkedOrders.findIndex(
+                (o) => this.parkKey(o) === String(key)
+            );
+            if (i >= 0) {
+                this.parkedOrders.splice(i, 1);
+                this.setParked(this.parkedOrders);
+            }
+        },
+
         handleKbInput(val) {
             this.searchQueryRaw = val;
             this.debouncedSearch();
@@ -1853,9 +2199,7 @@ export default {
         },
 
         keyScope() {
-            return String(
-                this.restaurant?.id ?? this.slug(this.restaurantName) ?? "rest"
-            );
+            return String(this.storageScope || "rest");
         },
         stateKey(name) {
             return `${name}:${this.keyScope()}`;
@@ -1990,8 +2334,11 @@ export default {
         },
         selectTable(i) {
             if (this.orderType !== "dinein") return;
+            // allow clicking the already-selected table to just close
             this.currentTable = i;
+            this.showTables = false; // ✅ auto-dismiss
         },
+
         clearTable() {
             this.currentTable = null;
         },
@@ -2236,6 +2583,7 @@ export default {
         },
         clearCart() {
             this.cartLines = [];
+            this.activeParkedKey = null;
         },
 
         // Persistence (scoped)
@@ -2293,32 +2641,99 @@ export default {
         },
         holdOrder() {
             if (!this.cartLines.length || this.saving) return;
+
             const sub = this.subtotal;
             const disc = this.discountAmount;
             const total = sub - disc;
+
+            // If we’re updating an existing held order, keep its id & key.
+            let existingIdx = -1;
+            let id,
+                key = this.activeParkedKey || null;
+
+            if (this.activeParkedKey) {
+                existingIdx = this.parkedOrders.findIndex(
+                    (o) => this.parkKey(o) === this.activeParkedKey
+                );
+                if (existingIdx >= 0) {
+                    id = this.parkedOrders[existingIdx].id; // ✅ preserve number
+                    key = this.parkedOrders[existingIdx]._key || key; // keep same key
+                }
+            }
+
+            // For new holds, pick the smallest available number (1 if empty)
+            if (id == null) id = this.nextHoldNumber();
+            if (!key) {
+                key =
+                    "p" +
+                    Date.now().toString(36) +
+                    Math.random().toString(36).slice(2, 8);
+            }
+
             const ord = {
-                id: this.parkedOrders.length + 1,
-                time: Date.now(),
+                id,
+                _key: key,
+                time: Date.now(), // you can keep or update time as you prefer
                 type: this.orderType,
                 table: this.currentTable,
                 lines: JSON.parse(JSON.stringify(this.cartLines)),
                 total,
             };
-            this.parkedOrders.unshift(ord);
+
+            if (existingIdx >= 0) {
+                this.parkedOrders.splice(existingIdx, 1, ord); // replace in place
+            } else {
+                this.parkedOrders.unshift(ord); // add new
+            }
             this.setParked(this.parkedOrders);
+
+            // clear current order & table after holding
             this.cartLines = [];
+            this.activeParkedKey = null;
+            this.clearTable();
+
+            this.toast("Order held.");
         },
+
         resumeParked(i) {
             const ord = this.parkedOrders[i];
             if (!ord) return;
+
             this.cartLines = JSON.parse(JSON.stringify(ord.lines || []));
             this.setOrderType(ord.type || "dinein");
             this.currentTable = ord.table || null;
+
+            this.activeParkedKey = this.parkKey(ord);
+            this.toast(`Loaded held order #${ord.id || ""}`);
+
+            // ✅ close the modal after loading
+            this.showHeldModal = false;
+        },
+        resumeParkedByKey(key) {
+            const i = this.parkedOrders.findIndex(
+                (o) => this.parkKey(o) === String(key)
+            );
+            if (i >= 0) this.resumeParked(i);
+        },
+        // replace your existing deleteParked with this safe version
+        deleteParked(i) {
+            const ord = this.parkedOrders[i];
+            if (!ord) return;
+            const key = this.parkKey(ord);
             this.parkedOrders.splice(i, 1);
             this.setParked(this.parkedOrders);
+            if (this.activeParkedKey === key) this.activeParkedKey = null;
         },
-        deleteParked(i) {
-            this.parkedOrders.splice(i, 1);
+
+        // add a key-based variant and use it from the modal to avoid index mismatch
+        deleteParkedByKey(key) {
+            const idx = this.parkedOrders.findIndex(
+                (o) => this.parkKey(o) === String(key)
+            );
+            if (idx === -1) return;
+            if (this.activeParkedKey === String(key))
+                this.activeParkedKey = null;
+            this.parkedOrders.splice(idx, 1);
             this.setParked(this.parkedOrders);
         },
 
@@ -2620,12 +3035,17 @@ export default {
                     };
                     this.printReceiptFromOrder(withDaily);
                 }
+                if (this.activeParkedKey) {
+                    this.removeParkedByKey(this.activeParkedKey); // consume the hold
+                    this.activeParkedKey = null;
+                }
 
                 this.cartLines = [];
                 this.discountType = "amount";
                 this.discountValue = 0;
                 this.payParts = [];
                 this.nextDailyOrderPreview = null;
+                this.clearTable();
             } catch (err) {
                 const key = this.stateKey("pos_pending_orders");
                 const arr = JSON.parse(localStorage.getItem(key) || "[]");
@@ -3878,5 +4298,324 @@ body {
     box-shadow: none !important;
     outline: none !important;
     border-color: #e4f4ea !important; /* same as idle state */
+}
+
+.order-chip.is-loaded {
+    border-style: solid;
+    border-color: #cde8d5;
+    background: #f7fcf9;
+}
+
+.held-card {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 0.8rem;
+    padding: 0.7rem;
+    display: grid;
+    gap: 0.4rem;
+}
+.held-header .held-id {
+    font-weight: 800;
+}
+.held-type {
+    font-weight: 700;
+}
+.held-actions {
+    display: flex;
+    gap: 0.4rem;
+    justify-content: flex-end;
+}
+.table-card.disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+.table-card.disabled .table-ico {
+    background: #f8fafb;
+    color: #9ca3af;
+}
+/* Held modal bigger limits */
+.held-modal .modal-dialog {
+    max-width: 1100px; /* ~wider than default xl */
+    width: min(96vw, 1100px);
+}
+
+/* Clickable held cards */
+.held-card {
+    cursor: pointer;
+}
+.held-card:focus-visible {
+    outline: 3px solid var(--ring);
+    outline-offset: 2px;
+}
+/* Keep delete from looking disabled when card is disabled */
+.held-actions .btn {
+    cursor: pointer;
+}
+/* --- Held Modal: larger, polished container --- */
+.held-modal .modal-dialog {
+    max-width: 1100px;
+    width: min(96vw, 1100px);
+}
+.held-modal-content {
+    border-radius: 1rem;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    background: radial-gradient(
+            1200px 200px at 100% -20%,
+            rgba(34, 197, 94, 0.04),
+            transparent 60%
+        ),
+        var(--card);
+}
+.held-modal-header {
+    background: linear-gradient(135deg, #eefaf3 0%, #ffffff 100%);
+    border-bottom: 1px solid var(--line);
+}
+
+/* --- Toolbar --- */
+.held-toolbar {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    margin-bottom: 0.6rem;
+}
+.held-search {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    border: 1.5px solid #dbeee3;
+    background: #fff;
+    border-radius: 0.8rem;
+    padding: 0.4rem 0.6rem;
+    min-width: 260px;
+    flex: 1 1 320px;
+}
+.held-search i {
+    color: #6b7280;
+}
+.held-search-input {
+    border: none;
+    outline: none;
+    width: 100%;
+    background: transparent;
+}
+.held-legend {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--muted);
+    font-size: 0.85rem;
+    flex: 0 0 auto;
+}
+.legend-sep {
+    opacity: 0.6;
+}
+.legend-dot {
+    display: inline-block;
+    width: 0.6rem;
+    height: 0.6rem;
+    border-radius: 50%;
+    vertical-align: middle;
+    margin-right: 0.25rem;
+}
+.legend-loaded {
+    background: #34d399;
+}
+.legend-dinein {
+    background: #60a5fa;
+}
+.legend-other {
+    background: #fbbf24;
+}
+
+/* Count chip in title */
+.held-count {
+    background: #fff;
+    border: 1px solid #dbeee3;
+    font-weight: 800;
+}
+
+/* --- Empty state --- */
+.held-empty {
+    text-align: center;
+    color: var(--muted);
+    padding: 2.2rem 0;
+    border: 2px dashed #e4f4ea;
+    border-radius: 0.9rem;
+    background: #fbfefd;
+}
+.held-empty-icon {
+    font-size: 2rem;
+    margin-bottom: 0.4rem;
+    color: var(--brand);
+}
+.held-empty-title {
+    font-weight: 800;
+    color: var(--ink);
+}
+.held-empty-sub {
+    font-size: 0.9rem;
+}
+
+/* --- Grid: max 2 columns --- */
+.held-grid-modern {
+    display: grid;
+    gap: 0.75rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+@media (max-width: 720px) {
+    .held-grid-modern {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* --- Card --- */
+.held-card-modern {
+    position: relative;
+    background: #fff;
+    border: 1.5px solid #e4f4ea;
+    border-radius: 0.9rem;
+    padding: 0.8rem 0.8rem 0.7rem;
+    display: grid;
+    gap: 0.45rem;
+    transition: transform 0.18s ease, box-shadow 0.18s ease,
+        border-color 0.18s ease;
+    cursor: pointer;
+}
+.held-card-modern:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 26px rgba(15, 139, 76, 0.12);
+    border-color: #cde8d5;
+}
+.held-card-modern:focus-visible {
+    outline: 3px solid var(--ring);
+    outline-offset: 2px;
+}
+
+/* subtle colored accent bar on left by type */
+.held-card-modern::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 5px;
+    border-top-left-radius: inherit;
+    border-bottom-left-radius: inherit;
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0));
+}
+.held-card-modern.is-dinein::before {
+    background: linear-gradient(180deg, #60a5fa, #3b82f6);
+}
+.held-card-modern.is-other::before {
+    background: linear-gradient(180deg, #fbbf24, #f59e0b);
+}
+.held-card-modern.is-loaded {
+    border-color: #bfe7d2;
+    background: linear-gradient(0deg, #ffffff 0%, #f7fcf9 100%);
+    box-shadow: 0 8px 18px rgba(34, 197, 94, 0.15);
+}
+
+/* header row */
+.held-card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+.held-id {
+    font-weight: 900;
+    letter-spacing: 0.02em;
+}
+.held-type {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+.chip-type {
+    border: 1px solid #e4f4ea;
+    background: #f7fcf9;
+    border-radius: 999px;
+    padding: 0.1rem 0.5rem;
+    font-size: 0.78rem;
+    font-weight: 800;
+}
+.chip-loaded {
+    background: #ecfdf5;
+    border: 1px solid #bbf7d0;
+    color: #065f46;
+    border-radius: 999px;
+    padding: 0.1rem 0.5rem;
+    font-size: 0.78rem;
+    font-weight: 800;
+}
+
+/* meta row */
+.held-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 0.8rem;
+    color: var(--muted);
+}
+.meta-dot {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+/* items list */
+.held-items {
+    list-style: none;
+    padding: 0;
+    margin: 0.2rem 0 0;
+    display: grid;
+    gap: 0.25rem;
+}
+.held-item {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 0.5rem;
+    border: 1px dashed #e4f4ea;
+    background: #fff;
+    border-radius: 0.6rem;
+    padding: 0.35rem 0.5rem;
+}
+.held-item-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.held-item-qty {
+    font-weight: 800;
+    color: var(--ink);
+}
+
+/* actions row */
+.held-actions-modern {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 0.35rem;
+}
+.ghost-spacer {
+    flex: 1;
+}
+.cta-hint {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--muted);
+    font-size: 0.85rem;
+}
+
+/* footer */
+.held-modal-footer {
+    background: #f8fdfa;
+    border-top: 1px solid var(--line);
 }
 </style>

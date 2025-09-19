@@ -26,6 +26,7 @@
                     </div>
 
                     <div class="header-tools">
+                        <!-- Address (optional) -->
                         <div
                             v-if="restaurantAddress"
                             class="text-muted d-none d-md-block me-2"
@@ -80,17 +81,31 @@
                             </ul>
                         </div>
 
-                        <!-- Table toggle -->
+                        <!-- subtle divider for better grouping -->
+                        <span class="tools-sep" aria-hidden="true"></span>
+
+                        <!-- Single enhanced Tables button (icon + inline T# state) -->
                         <button
-                            class="btn-circle"
+                            class="btn-pill d-flex align-items-center gap-2"
                             :title="'Choose Table'"
                             @click="openTables()"
+                            :aria-pressed="showTables ? 'true' : 'false'"
+                            :disabled="orderType !== 'dinein'"
+                            :style="{
+                                padding: '0.45rem 0.85rem',
+                                fontWeight: 800,
+                            }"
                         >
                             <i class="fa-solid fa-chair"></i>
+                            <span>
+                                {{
+                                    orderType === "dinein"
+                                        ? "T" + (currentTable || "—")
+                                        : "T—"
+                                }}
+                            </span>
                         </button>
-                        <span class="table-badge ms-1" id="tableBadge">
-                            {{ currentTable ? "T" + currentTable : "—" }}
-                        </span>
+                        <span class="tools-sep" aria-hidden="true"></span>
 
                         <!-- User / Auth -->
                         <div class="ms-2 d-flex align-items-center gap-2">
@@ -110,6 +125,7 @@
                                         }}
                                     </span>
                                 </span>
+
                                 <button
                                     class="btn btn-danger-soft btn-sm"
                                     @click="logout"
@@ -361,39 +377,44 @@
             <!-- ===== Right: Cart / Totals ===== -->
             <aside class="panel cart">
                 <div class="cart-head">
-                    <div class="fw-bold">
-                        <i
-                            class="fa-solid fa-basket-shopping me-1"
-                            style="color: var(--brand)"
-                        ></i
-                        >Current Order
+                    <div class="cart-title">
+                        <span class="cart-title-ico">
+                            <i
+                                class="fa-solid fa-basket-shopping"
+                                aria-hidden="true"
+                            ></i>
+                        </span>
+                        <span class="cart-title-text">Current Order</span>
                     </div>
-                    <div class="d-flex gap-1">
+
+                    <div class="cart-actions">
                         <button
-                            class="btn btn-sub btn-sm"
+                            class="btn-ctl"
                             id="holdOrder"
                             @click="holdOrder"
                             :disabled="saving || !isAuthed"
                         >
-                            <i class="fa-solid fa-box-archive me-1"></i>Hold
+                            <i class="fa-solid fa-box-archive me-1"></i> Hold
                         </button>
+
                         <button
-                            class="btn btn-danger-soft btn-sm"
+                            class="btn-ctl danger"
                             id="clearCart"
                             @click="clearCart"
                             :disabled="saving || !isAuthed"
                         >
-                            <i class="fa-solid fa-trash-can me-1"></i>Clear
+                            <i class="fa-solid fa-trash-can me-1"></i> Clear
                         </button>
+
                         <button
-                            class="btn btn-sub btn-sm position-relative"
+                            class="btn-ctl"
                             @click="showHeldModal = true"
                             :disabled="saving || !isAuthed"
                             title="View held orders"
                         >
-                            <i class="fa-solid fa-clock-rotate-left me-1"></i
-                            >Held
-                            <span class="badge-pill ms-1">{{
+                            <i class="fa-solid fa-clock-rotate-left me-1"></i>
+                            Held
+                            <span class="count" aria-live="polite">{{
                                 parkedOrders.length
                             }}</span>
                         </button>
@@ -4614,5 +4635,131 @@ body {
 .held-modal-footer {
     background: #f8fdfa;
     border-top: 1px solid var(--line);
+}
+/* Give header tools a little more air */
+.header-tools {
+    gap: 0.75rem;
+}
+
+/* a subtle divider so the tables control feels separated */
+.tools-sep {
+    display: inline-block;
+    width: 1px;
+    height: 28px;
+    background: #e6f3ea;
+    margin: 0 0.25rem;
+}
+
+/* bigger, friendlier table button */
+.btn-circle {
+    width: 40px;
+    height: 40px;
+}
+.btn-circle-lg {
+    width: 46px;
+    height: 46px;
+} /* ⬅️ new size */
+.tables-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+}
+
+/* clearer, tappable table status */
+.table-chip {
+    background: #fff;
+    border: 1px solid #dbeee3;
+    border-radius: 999px;
+    padding: 0.2rem 0.55rem;
+    font-size: 0.82rem;
+    font-weight: 800;
+    line-height: 1.1;
+    min-width: 96px; /* stable width so layout doesn't jump */
+    text-align: center;
+    color: var(--ink);
+}
+/* cart head layout breathes & wraps nicely on small screens */
+.cart-head {
+    padding: 0.75rem 0.9rem;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+}
+
+/* left side: icon chip + label */
+.cart-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+}
+.cart-title-ico {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: #ecfdf5;
+    border: 1px solid #bbf7d0;
+    color: #065f46;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.cart-title-text {
+    font-weight: 900;
+}
+
+/* right side: tidy, equal-sized controls */
+.cart-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+}
+.btn-ctl {
+    border: 1.5px solid #e4f4ea;
+    background: #fff;
+    color: var(--ink);
+    border-radius: 0.65rem;
+    height: 38px;
+    padding: 0 0.75rem;
+    font-weight: 800;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    transition: 0.15s ease;
+}
+.btn-ctl:hover {
+    background: #f7fcf9;
+    border-color: #cde8d5;
+}
+.btn-ctl.danger {
+    background: #fff5f5;
+    border-color: #fde2e2;
+    color: #991b1b;
+}
+
+.btn-ctl .count {
+    margin-left: 0.35rem;
+    font-size: 0.78rem;
+    font-weight: 800;
+    background: #fff;
+    border: 1px solid #dbeee3;
+    border-radius: 999px;
+    padding: 0.05rem 0.45rem;
+    line-height: 1;
+}
+
+/* small screens: make buttons fill nicely */
+@media (max-width: 520px) {
+    .cart-actions {
+        width: 100%;
+    }
+    .btn-ctl {
+        flex: 1;
+        justify-content: center;
+    }
 }
 </style>

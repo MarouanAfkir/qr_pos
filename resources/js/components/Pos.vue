@@ -45,9 +45,9 @@
                             @click="retryPending"
                         >
                             <i class="fa-solid fa-cloud-slash"></i>
-                            <span class="badge-pill pending-dot">{{
-                                pendingOrders.length
-                            }}</span>
+                            <span class="badge-pill pending-dot"
+                                >{{ pendingOrders.length }}
+                            </span>
                         </button>
 
                         <!-- Lang switcher -->
@@ -1518,17 +1518,64 @@
                 </div>
 
                 <form v-else @submit.prevent="login">
-                    <div class="mb-2">
-                        <label class="form-label small">Staff Code</label>
-                        <input
-                            class="form-control"
-                            v-model.trim="loginForm.code"
-                            autocomplete="username"
-                            placeholder="e.g. A123"
-                            :disabled="authLoading"
-                            required
-                        />
+                    <!-- Staff Code (compact, code-only tiles) -->
+                    <div class="mb-3">
+                        <label
+                            class="form-label small d-flex align-items-center justify-content-between"
+                        >
+                            <span>Staff Code</span>
+                            <small class="text-muted" v-if="loginForm.code">
+                                {{ isRTL ? "المحدد:" : "Selected:" }} #{{
+                                    loginForm.code
+                                }}
+                            </small>
+                        </label>
+
+                        <div
+                            class="staff-grid-compact"
+                            role="listbox"
+                            aria-label="Staff list"
+                        >
+                            <button
+                                v-for="u in users"
+                                :key="u.pos_code"
+                                type="button"
+                                role="option"
+                                class="staff-code-card"
+                                :class="{
+                                    active:
+                                        String(loginForm.code) ===
+                                        String(u.pos_code),
+                                    'is-disabled': !!u.is_disabled,
+                                }"
+                                :aria-selected="
+                                    String(loginForm.code) ===
+                                    String(u.pos_code)
+                                        ? 'true'
+                                        : 'false'
+                                "
+                                :disabled="authLoading || !!u.is_disabled"
+                                @click="loginForm.code = String(u.pos_code)"
+                                :title="'#' + u.pos_code"
+                            >
+                                <span class="code-label"
+                                    >#{{ u.pos_code }}</span
+                                >
+                            </button>
+
+                            <div
+                                v-if="!users || !users.length"
+                                class="staff-empty text-muted"
+                            >
+                                {{
+                                    isRTL
+                                        ? "لا يوجد مستخدمون"
+                                        : "No staff available"
+                                }}
+                            </div>
+                        </div>
                     </div>
+
                     <div class="mb-2">
                         <label class="form-label small">PIN</label>
                         <input
@@ -1691,6 +1738,7 @@ export default {
             type: String,
             default: "/assets/img/gallery/placeholder.png",
         },
+        users: { type: Array, default: () => [] },
         logoFallback: { type: String, default: "/assets/img/logo/logo.svg" },
         ordersEndpoint: { type: String, default: "/api/orders" },
         loginEndpoint: { type: String, default: "/api/pos/login" },
@@ -4762,4 +4810,56 @@ body {
         justify-content: center;
     }
 }
+/* Compact code-only staff picker */
+.staff-grid-compact {
+  margin-top: .5rem;
+  display: grid;
+  /* small min width = more per row; adjusts automatically */
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: .5rem;
+}
+
+.staff-code-card {
+  display: grid;
+  place-items: center;
+  padding: .55rem;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  border-radius: .9rem;
+  min-height: 56px;             /* ≥44px tap target */
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: transform .05s ease, box-shadow .12s ease, border-color .12s ease;
+  user-select: none;
+}
+
+.staff-code-card:active { transform: scale(.992); }
+.staff-code-card.active {
+  border-color: #22c55e;
+  box-shadow: 0 0 0 3px rgba(34,197,94,.14);
+}
+
+.staff-code-card.is-disabled,
+.staff-code-card[disabled] {
+  opacity: .55;
+  pointer-events: none;
+}
+
+.code-label {
+  font-weight: 800;
+  letter-spacing: .3px;
+  font-size: 1rem;               /* readable but compact */
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.staff-empty { padding: .75rem; }
+
+/* Optional: denser layout on wide screens */
+@media (min-width: 1200px) {
+  .staff-grid-compact {
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  }
+}
+
 </style>

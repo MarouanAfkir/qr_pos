@@ -28,8 +28,9 @@
         <pos
             :articles='@json($articles ?? [])'
             :categories='@json($categories ?? [])'
-            :restaurant='@json($restaurant ?? null)'
+            :restaurant='@json($company ?? null)'
             :languages='@json($languages ?? [])'
+            :users='@json($users ?? [])'
             default-language="{{ request('lang', app()->getLocale() ?: 'en') }}"
             currency=" DH"
             placeholder="{{ asset('assets/img/gallery/placeholder.png') }}"

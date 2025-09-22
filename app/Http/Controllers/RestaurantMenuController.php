@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 
 class RestaurantMenuController extends Controller
@@ -14,6 +15,13 @@ class RestaurantMenuController extends Controller
         $token   = config('services.qrevo.token');
         $uuid    = config('services.qrevo.business_id');
 
+        $companyInfo = Http::withToken($token)
+            ->acceptJson()
+            ->withOptions(['verify' => false])
+            ->withHeaders(['Accept-Language' => 'en'])
+            ->get("{$baseUrl}/restaurants/{$uuid}/info")
+            ->throw()
+            ->json();
         $articles = Http::withToken($token)
             ->acceptJson()
             ->withOptions(['verify' => false])
@@ -30,12 +38,15 @@ class RestaurantMenuController extends Controller
             ->get("{$baseUrl}/restaurants/{$uuid}/categories")
             ->throw()
             ->json();
-
+        //Get users pos_code to send it to the blade
+        $users = DB::table('users')->where('is_admin',0)->select('pos_code')->get();
 
         /* -------- Render Blade -------- */
         return view('pos', [
             'articles'   => $articles   ?? [],
             'categories' => $categories ?? [],
+            'company'    => $companyInfo['data'] ?? [],
+            'users'      => $users      ?? [],
         ]);
     }
     // getAdminPage

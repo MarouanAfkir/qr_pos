@@ -491,7 +491,7 @@
                     </div>
                 </div>
 
-                <div class="cart-foot">
+                <div class="cart-foot mt-5">
                     <div class="tot-row">
                         <span>Subtotal</span
                         ><strong id="t_sub">{{ money(subtotal) }}</strong>
@@ -2056,6 +2056,7 @@ export default {
         },
     },
     mounted() {
+        // theme + number format set-up (unchanged)
         document.documentElement.dataset.theme =
             localStorage.getItem("pos_theme") || "";
 
@@ -2077,23 +2078,28 @@ export default {
         }
         this.isTouch = "ontouchstart" in window || navigator.maxTouchPoints > 0;
 
-        this.initAuth();
-        this.loadCartState();
-        this.loadPendingOrders();
-        this.migrateHeldIds();
-
+        // 🔴 IMPORTANT: set the scope FIRST so all keys are consistent
         this.storageScope =
             this.restaurant?.id ?? this.slug(this.restaurantName) ?? "rest";
 
-        // 2) Load parked orders now that the scope is stable
+        // Auth init (unchanged)
+        this.initAuth();
+
+        // Load state with the CORRECT scope
+        this.loadCartState();
+        this.loadPendingOrders();
+
+        // 1) Load parked orders for this scope
         this.parkedOrders = this.getParked();
 
-        // 3) Optional: migrate from old/legacy keys if nothing found
-        if (!this.parkedOrders.length) {
+        // 2) One-time migration from legacy keys if nothing found for this scope
+        //    - use a per-scope guard so it won't run repeatedly
+        const MIGRATED_FLAG = this.stateKey("pos_park_migrated");
+        if (!this.parkedOrders.length && !localStorage.getItem(MIGRATED_FLAG)) {
             const candidates = [
                 `pos_parked_orders:rest`,
                 `pos_parked_orders:${this.slug("Restaurant")}`,
-                // add any other historic patterns you used, if applicable
+                // add other historic patterns here if you had any
             ];
             for (const k of candidates) {
                 const raw = localStorage.getItem(k);
@@ -2101,15 +2107,24 @@ export default {
                     try {
                         const arr = JSON.parse(raw);
                         if (Array.isArray(arr) && arr.length) {
-                            // write into the new, stable key and use it
-                            localStorage.setItem(this.PARK_KEY(), raw);
+                            // write into the new, stable scoped key and USE IT
+                            this.setParked(arr);
                             this.parkedOrders = arr;
+
+                            // ✅ mark migrated for this scope
+                            localStorage.setItem(MIGRATED_FLAG, "1");
+
+                            // ✅ purge legacy key so deleted orders can't resurrect later
+                            localStorage.removeItem(k);
                             break;
                         }
                     } catch (_) {}
                 }
             }
         }
+
+        // 3) Now that parkedOrders is loaded, fix missing ids if any
+        this.migrateHeldIds();
     },
 
     watch: {
@@ -2976,7 +2991,7 @@ export default {
                 body{font-family:monospace;padding:8px}
                 h2,h3{margin:4px 0}
                 .line{display:flex;justify-content:space-between}
-                .small{font-size:12px;color: #555}
+                .small{font-size:12px;color: #000}
                 hr{border:none;border-top:1px dashed #999;margin:6px 0}
             </style></head><body>`);
 
@@ -2985,9 +3000,19 @@ export default {
                 ? new Date(order.created_at)
                 : new Date();
             const daily = order.daily_order || order.daily || null;
-
+            const logoSrc = this.restaurant?.logo || null;
             w.document.write(
-                `<h2>${this.restaurantName}</h2><div class="small">${
+                //logo
+                '<div style="text-align:center;margin-bottom:2px">' +
+                    (logoSrc
+                        ? `<img src="${logoSrc}" alt="Logo" style="max-width:120px;max-height:80px"/>`
+                        : "") +
+                    "</div>"
+            );
+            w.document.write(
+                `<h2 style="text-align:center">${
+                    this.restaurantName
+                }</h2><div class="small">${
                     this.restaurantAddress || ""
                 }</div><hr>`
             );
@@ -3453,12 +3478,14 @@ body {
 .pos-shell {
     display: grid;
     gap: 1rem;
-    grid-template-columns: minmax(0, 1fr) clamp(320px, 30vw, 390px); /* responsive aside: prevents pushing off-screen */
+    /* was: minmax(0, 1fr) clamp(320px, 30vw, 390px) */
+    grid-template-columns: minmax(0, 1fr) clamp(360px, 34vw, 440px);
     padding: 0.9rem 0.9rem 1.2rem;
 }
 @media (max-width: 1200px) {
     .pos-shell {
-        grid-template-columns: minmax(0, 1fr) clamp(300px, 34vw, 360px);
+        /* was: clamp(300px, 34vw, 360px) */
+        grid-template-columns: minmax(0, 1fr) clamp(340px, 38vw, 400px);
     }
 }
 @media (max-width: 1100px) {
@@ -3701,14 +3728,14 @@ body {
     justify-content: space-between;
 }
 .cart-body {
-    padding: 0.65rem 0.9rem;
+    padding: 0.85rem 1rem;
 }
 .cart-line {
     display: grid;
     grid-template-columns: 1fr auto;
     gap: 0.4rem;
     border-bottom: 1px dashed #e4f4ea;
-    padding: 0.55rem 0;
+    padding: 0.7rem 0;
 }
 .cart-line:last-child {
     border-bottom: none;
@@ -3736,7 +3763,7 @@ body {
     font-weight: 800;
 }
 .cart-foot {
-    padding: 0.75rem 0.9rem;
+    padding: 1rem 1rem;
     border-top: 1px solid var(--line);
     background: #f7fcf9;
 }
@@ -3744,7 +3771,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin: 0.2rem 0;
+    margin: 0.45rem 0;
 }
 .grand {
     font-size: 1.15rem;
@@ -4812,54 +4839,87 @@ body {
 }
 /* Compact code-only staff picker */
 .staff-grid-compact {
-  margin-top: .5rem;
-  display: grid;
-  /* small min width = more per row; adjusts automatically */
-  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-  gap: .5rem;
+    margin-top: 0.5rem;
+    display: grid;
+    /* small min width = more per row; adjusts automatically */
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 0.5rem;
 }
 
 .staff-code-card {
-  display: grid;
-  place-items: center;
-  padding: .55rem;
-  border: 1px solid #e5e7eb;
-  background: #fff;
-  border-radius: .9rem;
-  min-height: 56px;             /* ≥44px tap target */
-  cursor: pointer;
-  touch-action: manipulation;
-  transition: transform .05s ease, box-shadow .12s ease, border-color .12s ease;
-  user-select: none;
+    display: grid;
+    place-items: center;
+    padding: 0.55rem;
+    border: 1px solid #e5e7eb;
+    background: #fff;
+    border-radius: 0.9rem;
+    min-height: 56px; /* ≥44px tap target */
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: transform 0.05s ease, box-shadow 0.12s ease,
+        border-color 0.12s ease;
+    user-select: none;
 }
 
-.staff-code-card:active { transform: scale(.992); }
+.staff-code-card:active {
+    transform: scale(0.992);
+}
 .staff-code-card.active {
-  border-color: #22c55e;
-  box-shadow: 0 0 0 3px rgba(34,197,94,.14);
+    border-color: #22c55e;
+    box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.14);
 }
 
 .staff-code-card.is-disabled,
 .staff-code-card[disabled] {
-  opacity: .55;
-  pointer-events: none;
+    opacity: 0.55;
+    pointer-events: none;
 }
 
 .code-label {
-  font-weight: 800;
-  letter-spacing: .3px;
-  font-size: 1rem;               /* readable but compact */
-  line-height: 1;
-  white-space: nowrap;
+    font-weight: 800;
+    letter-spacing: 0.3px;
+    font-size: 1rem; /* readable but compact */
+    line-height: 1;
+    white-space: nowrap;
 }
 
-.staff-empty { padding: .75rem; }
+.staff-empty {
+    padding: 0.75rem;
+}
 
 /* Optional: denser layout on wide screens */
 @media (min-width: 1200px) {
-  .staff-grid-compact {
-    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
-  }
+    .staff-grid-compact {
+        grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    }
 }
 
+/* totals & discount spacing */
+.tot-row {
+    /* was: margin: 0.2rem 0; */
+    margin: 0.45rem 0; /* more vertical rhythm */
+}
+
+.tot-row + .tot-row {
+    margin-top: 0.6rem;
+}
+
+/* separate grand total visually */
+.tot-row.grand {
+    padding-top: 0.5rem;
+    margin-top: 0.6rem;
+    border-top: 1px dashed var(--line);
+    font-size: 1.15rem;
+    font-weight: 800;
+}
+
+/* add a touch of space around the discount input */
+.cart-foot #discVal {
+    margin-inline-start: 0.5rem;
+}
+
+/* keep the discount radio group from hugging labels */
+#discType .btn {
+    padding-inline: 0.6rem;
+}
 </style>

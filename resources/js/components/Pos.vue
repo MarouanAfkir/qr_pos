@@ -1346,13 +1346,51 @@
                                         :key="idx"
                                         class="held-item"
                                     >
-                                        <span
-                                            class="held-item-name text-truncate"
-                                            >{{ ln.name }}</span
+                                        <!-- top row: name (left) + quantity (right) -->
+                                        <div class="held-line-main">
+                                            <span
+                                                class="held-item-name text-truncate"
+                                                >{{ ln.name }}</span
+                                            >
+                                            <span class="held-item-qty"
+                                                >× {{ ln.qty }}</span
+                                            >
+                                        </div>
+
+                                        <!-- options block: FULL WIDTH under the name -->
+                                        <div
+                                            v-if="
+                                                ln.selections &&
+                                                ln.selections.length
+                                            "
+                                            class="held-item-opts"
                                         >
-                                        <span class="held-item-qty"
-                                            >× {{ ln.qty }}</span
-                                        >
+                                            <div
+                                                v-for="(
+                                                    sel, si
+                                                ) in ln.selections"
+                                                :key="si"
+                                                class="held-opt-group"
+                                            >
+                                                <span class="held-opt-label"
+                                                    >{{ sel.name }}:</span
+                                                >
+                                                <span class="held-opt-values">
+                                                    <span
+                                                        v-for="(
+                                                            op, oi
+                                                        ) in sel.options || []"
+                                                        :key="oi"
+                                                        class="held-val"
+                                                    >
+                                                        {{
+                                                            op.name ||
+                                                            op.option_name
+                                                        }}
+                                                    </span>
+                                                </span>
+                                            </div>
+                                        </div>
                                     </li>
                                 </ul>
 
@@ -4679,6 +4717,7 @@ body {
     padding: 0.35rem 0.5rem;
 }
 .held-item-name {
+    font-weight: 800;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -4922,4 +4961,162 @@ body {
 #discType .btn {
     padding-inline: 0.6rem;
 }
+
+/* keep the existing two-column top row for name + qty */
+.held-item {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: start;
+    gap: 0.5rem;
+    border: 1px dashed #e4f4ea;
+    background: #fff;
+    border-radius: 0.6rem;
+    padding: 0.45rem 0.55rem;
+}
+
+/* name + qty on the first row */
+.held-line-main {
+    grid-column: 1 / -1; /* Let it define the row, then we place opts below */
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* options block sits UNDER the first row, and spans full width */
+.held-item-opts {
+    grid-column: 1 / -1; /* ⬅️ full width under the item */
+    margin-top: 0.15rem;
+    color: var(--muted);
+    font-size: 0.85rem;
+    line-height: 1.35;
+    white-space: normal;
+    word-break: break-word;
+}
+
+/* each variation line (e.g., Size:, Toppings:) */
+.held-opt-group + .held-opt-group {
+    margin-top: 2px;
+}
+
+.held-opt-label {
+    font-weight: 700;
+    margin-right: 0.25rem;
+}
+
+/* inline options with bold dot separators */
+.held-opt-values .held-val {
+    display: inline;
+}
+
+.held-sep {
+    font-weight: 900; /* bold dot */
+    display: inline-block;
+    margin: 0 0.35rem;
+    line-height: 1;
+}
+.held-item-opts {
+    border-top: 1px dashed #e4f4ea;
+    padding-top: 0.25rem;
+}
+.held-item-opts {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+/* options block sits UNDER the first row, and spans full width */
+.held-item-opts {
+    grid-column: 1 / -1;
+    margin-top: 0.15rem;
+    color: var(--muted);
+    font-size: 0.85rem;
+    line-height: 1.35;
+    white-space: normal;
+    word-break: break-word;
+}
+
+/* each variation line (e.g., Size:, Toppings:) */
+.held-opt-group + .held-opt-group {
+    margin-top: 2px;
+}
+
+.held-opt-label {
+    font-weight: 700;
+    margin-right: 0.25rem;
+}
+
+/* render a bold dot BEFORE every value except the first */
+.held-opt-values .held-val:not(:first-child)::before {
+    content: "•";
+    font-weight: 900;
+    display: inline-block;
+    margin: 0 0.35rem;
+    line-height: 1;
+}
+
+/* ensure the top row (name + qty) then options below */
+.held-item {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: start;
+    gap: 0.5rem;
+}
+
+.held-line-main {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 0.5rem;
+}
+/* Put all variation groups on one row; wrap when needed */
+.held-item-opts {
+  grid-column: 1 / -1;
+  margin-top: 0.15rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+  line-height: 1.35;
+  display: flex;            /* ⬅️ was block/grid; now flex row */
+  flex-wrap: wrap;          /* wrap to next line when tight */
+  gap: 2px 10px;            /* row-gap, column-gap between groups */
+  white-space: normal;
+  word-break: break-word;
+}
+
+/* Each variation group (e.g., "Size: Large") sits inline */
+.held-opt-group {
+  display: inline-flex;     /* label + values stay together */
+  align-items: baseline;
+}
+
+/* Bold dot between variation groups (not the first) */
+.held-opt-group:not(:first-child)::before {
+  content: "•";
+  font-weight: 900;
+  display: inline-block;
+  margin: 0 0.4rem;
+  line-height: 1;
+}
+
+/* Keep the label bold and tight to its values */
+.held-opt-label {
+  font-weight: 700;
+  margin-right: 0.25rem;
+}
+
+/* Keep bold dot between option values inside the same group */
+.held-opt-values .held-val:not(:first-child)::before {
+  content: "•";
+  font-weight: 900;
+  display: inline-block;
+  margin: 0 0.35rem;
+  line-height: 1;
+}
+
+/* Remove old vertical stacking spacing, if you had it */
+.held-opt-group + .held-opt-group {
+  margin-top: 0; /* ⬅️ neutralize any previous vertical margin */
+}
+
 </style>

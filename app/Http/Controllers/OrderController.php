@@ -18,14 +18,15 @@ class OrderController extends Controller
      */
     public function index(Request $request)
     {
+
         $q = Order::query()->with(['items.options', 'payments']);
 
         if ($status = $request->string('status')->toString()) {
             $q->where('status', $status);
         }
 
-        if ($type = $request->string('type')->toString()) {
-            $q->where('order_type', $type);
+        if ($orderType = ($request->string('order_type')->toString() ?: $request->string('type')->toString())) {
+            $q->where('order_type', $orderType);
         }
 
         if ($search = $request->string('q')->toString()) {
@@ -35,7 +36,7 @@ class OrderController extends Controller
         if ($from = $request->date('from')) {
             $q->where('created_at', '>=', $from->startOfDay());
         }
-        
+
         if ($to = $request->date('to')) {
             $q->where('created_at', '<=', $to->endOfDay());
         }
@@ -124,7 +125,7 @@ class OrderController extends Controller
             'lines.*.base_unit_price'     => ['nullable', 'numeric', 'min:0'],
             'lines.*.unit_price'          => ['nullable', 'numeric', 'min:0'],
             'lines.*.quantity'            => ['required', 'integer', 'min:1'],
-         
+
             'lines.*.selections'                  => ['nullable', 'array'],
             'lines.*.selections.*.variation_name' => ['required_with:lines.*.selections', 'string', 'max:160'],
             'lines.*.selections.*.catalog_variation_id' => ['nullable', 'integer'],
@@ -192,7 +193,7 @@ class OrderController extends Controller
                     'unit_price'          => $unit,
                     'quantity'            => $quantity,
                     'line_total'          => round($unit * $quantity, 2),
-                   
+
                 ]);
 
                 $order->items()->save($orderItem);
@@ -321,8 +322,11 @@ class OrderController extends Controller
     {
         $data = $request->validate([
             'status' => ['required', Rule::in([
-                Order::STATUS_HELD, Order::STATUS_OPEN, Order::STATUS_PAID,
-                Order::STATUS_VOIDED, Order::STATUS_REFUNDED,
+                Order::STATUS_HELD,
+                Order::STATUS_OPEN,
+                Order::STATUS_PAID,
+                Order::STATUS_VOIDED,
+                Order::STATUS_REFUNDED,
             ])],
         ]);
 

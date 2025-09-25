@@ -568,6 +568,7 @@
                                 <option value="day">Jour</option>
                                 <option value="hour">Heure</option>
                                 <option value="cashier">Caissier</option>
+                                <option value="article">Article</option>
                                 <option value="order_type">
                                     Type de commande
                                 </option>
@@ -1308,6 +1309,7 @@ export default {
                 day: "Jour",
                 hour: "Heure",
                 cashier: "Caissier",
+                article: "Article",
                 order_type: "Type de commande",
                 payment_method: "Moyen de paiement",
                 status: "Statut",
@@ -1945,69 +1947,118 @@ export default {
             if (Array.isArray(json)) return json;
             return [];
         },
-        aggregateReport(orders, groupBy) {
-            const bucket = {};
-            const add = (key, o) => {
-                if (!bucket[key])
-                    bucket[key] = {
-                        group: key,
-                        orders: 0,
-                        items: 0,
-                        subtotal: 0,
-                        discount: 0,
-                        total: 0,
-                    };
-                const b = bucket[key];
-                b.orders += 1;
-                const items = this.adaptItems(o);
-                b.items += items.reduce(
-                    (s, it) => s + this.safeNum(it.quantity),
-                    0
-                );
-                b.subtotal += this.safeNum(o.subtotal);
-                b.discount += this.safeNum(o.discount_amount);
-                b.total += this.safeNum(o.total);
-            };
-            orders.forEach((o) => {
-                let key = "—";
-                if (groupBy === "day") {
-                    key = this.dateKey(o.created_at);
-                } else if (groupBy === "hour") {
-                    const dt = o.created_at
-                        ? new Date(o.created_at)
-                        : new Date();
-                    const dkey = this.dateKey(dt);
-                    const hh = ("0" + dt.getHours()).slice(-2);
-                    key = `${dkey} ${hh}:00`;
-                } else if (groupBy === "cashier") {
-                    key = this.cashierName(o) || "—";
-                } else if (groupBy === "order_type") {
-                    key = (o.order_type || "—").toUpperCase();
-                } else if (groupBy === "payment_method") {
-                    const methods = this.payments(o).map((p) =>
-                        (p.method || "—").toUpperCase()
-                    );
-                    key = methods.length ? methods.join(", ") : "—";
-                } else if (groupBy === "status") {
-                    key = (o.status || "paid").toUpperCase();
-                }
-                add(key, o);
-            });
-            const rows = Object.values(bucket).sort((a, b) =>
-                a.group.localeCompare(b.group)
-            );
-            const totals = rows.reduce(
-                (t, r) => ({
-                    orders: t.orders + r.orders,
-                    items: t.items + r.items,
-                    subtotal: t.subtotal + r.subtotal,
-                    discount: t.discount + r.discount,
-                    total: t.total + r.total,
-                }),
-                { orders: 0, items: 0, subtotal: 0, discount: 0, total: 0 }
-            );
-            return { rows, totals };
-        },
+       aggregateReport(orders, groupBy) {
+  // ---- Special path for "article" grouping
+  if (groupBy === "article") {
+    const bucket = {};
+    orders.forEach((o) => {
+      const items = this.adaptItems(o);
+      const seenThisOrder = new Set(); // to count the order only once per article
+      items.forEach((it) => {
+        const key = it.item_name || "—";
+        if (!bucket[key]) {
+          bucket[key] = {
+            group: key,
+            orders: 0,
+            items: 0,
+            subtotal: 0,
+            discount: 0, // stays 0 unless you allocate order-level discounts
+            total: 0,
+          };
+        }
+        const b = bucket[key];
+        // quantities & amounts
+        const qty = this.safeNum(it.quantity);
+        const line = this.safeNum(it.line_total); // already unit * qty in your adaptItems
+        b.items += qty;
+        b.subtotal += line; // treat as gross for the article
+        b.total += line;    // same as subtotal unless you allocate discounts
+
+        // count distinct orders that contain this article
+        if (!seenThisOrder.has(key)) {
+          b.orders += 1;
+          seenThisOrder.add(key);
+        }
+      });
+    });
+
+    const rows = Object.values(bucket).sort((a, b) =>
+      a.group.localeCompare(b.group)
+    );
+    const totals = rows.reduce(
+      (t, r) => ({
+        orders: t.orders + r.orders,
+        items: t.items + r.items,
+        subtotal: t.subtotal + r.subtotal,
+        discount: t.discount + r.discount,
+        total: t.total + r.total,
+      }),
+      { orders: 0, items: 0, subtotal: 0, discount: 0, total: 0 }
+    );
+    return { rows, totals };
+  }
+
+  // ---- Existing logic for other groupings
+  const bucket = {};
+  const add = (key, o) => {
+    if (!bucket[key])
+      bucket[key] = {
+        group: key,
+        orders: 0,
+        items: 0,
+        subtotal: 0,
+        discount: 0,
+        total: 0,
+      };
+    const b = bucket[key];
+    b.orders += 1;
+    const items = this.adaptItems(o);
+    b.items += items.reduce((s, it) => s + this.safeNum(it.quantity), 0);
+    b.subtotal += this.safeNum(o.subtotal);
+    b.discount += this.safeNum(o.discount_amount);
+    b.total += this.safeNum(o.total);
+  };
+
+  orders.forEach((o) => {
+    let key = "—";
+    if (groupBy === "day") {
+      key = this.dateKey(o.created_at);
+    } else if (groupBy === "hour") {
+      const dt = o.created_at ? new Date(o.created_at) : new Date();
+      const dkey = this.dateKey(dt);
+      const hh = ("0" + dt.getHours()).slice(-2);
+      key = `${dkey} ${hh}:00`;
+    } else if (groupBy === "cashier") {
+      key = this.cashierName(o) || "—";
+    } else if (groupBy === "order_type") {
+      key = (o.order_type || "—").toUpperCase();
+    } else if (groupBy === "payment_method") {
+      const methods = this.payments(o).map((p) =>
+        (p.method || "—").toUpperCase()
+      );
+      key = methods.length ? methods.join(", ") : "—";
+    } else if (groupBy === "status") {
+      key = (o.status || "paid").toUpperCase();
+    }
+    add(key, o);
+  });
+
+  const rows = Object.values(bucket).sort((a, b) =>
+    a.group.localeCompare(b.group)
+  );
+  const totals = rows.reduce(
+    (t, r) => ({
+      orders: t.orders + r.orders,
+      items: t.items + r.items,
+      subtotal: t.subtotal + r.subtotal,
+      discount: t.discount + r.discount,
+      total: t.total + r.total,
+    }),
+    { orders: 0, items: 0, subtotal: 0, discount: 0, total: 0 }
+  );
+  return { rows, totals };
+},
+
         exportReport() {
             if (!this.reports.rows.length) return;
             const header = [

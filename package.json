@@ -21,7 +21,9 @@
     "vue-template-compiler": "^2.7.16"
   },
   "dependencies": {
+    "apexcharts": "^5.3.5",
     "axios": "^1.8.2",
-    "vue": "^2.7.16"
+    "vue": "^2.7.16",
+    "vue-apexcharts": "^1.7.0"
   }
 }

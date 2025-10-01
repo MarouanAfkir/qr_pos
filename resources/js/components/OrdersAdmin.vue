@@ -856,6 +856,38 @@
                     </div>
                 </div>
             </div>
+            <!-- ====== Ventes par mois (12 derniers mois) ====== -->
+            <div class="row g-3 mt-1">
+                <div class="col-12">
+                    <div class="bo-card h-100 soft-shadow">
+                        <div
+                            class="bo-head small d-flex justify-content-between align-items-center"
+                        >
+                            <strong>Ventes par mois — 12 derniers mois</strong>
+                            <span class="text-muted small"
+                                >{{
+                                    monthlyChart.series[0].data.length
+                                }}
+                                mois</span
+                            >
+                        </div>
+                        <div class="bo-body">
+                            <div class="apex-wrap">
+                                <apexchart
+                                    v-if="monthlyChart.series[0].data.length"
+                                    type="bar"
+                                    height="360"
+                                    :options="monthlyChart.options"
+                                    :series="monthlyChart.series"
+                                />
+                                <div v-else class="text-muted small">
+                                    Aucune donnée
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             <!-- Top Articles / Caissiers -->
             <div class="row g-3 mt-1">
@@ -1269,6 +1301,114 @@ export default {
                 topItems: [],
                 byCashier: [],
             },
+            monthlyChart: {
+                series: [{ name: "Ventes", data: [] }],
+                options: {
+                    chart: {
+                        type: "bar",
+                        toolbar: { show: false },
+                        animations: {
+                            enabled: true,
+                            easing: "easeinout",
+                            speed: 500,
+                        },
+                        foreColor: "#0f172a", // slate-900 for max contrast
+                    },
+                    grid: {
+                        borderColor: "#eef2f7", // very light, solid grid for white bg
+                        strokeDashArray: 0, // no dashed grid
+                        padding: { left: 8, right: 8, top: 8, bottom: 6 },
+                    },
+                    plotOptions: {
+                        bar: {
+                            borderRadius: 8,
+                            borderRadiusApplication: "end", // round top only
+                            columnWidth: "48%",
+                            distributed: false, // we’ll pass a colors[] array
+                            dataLabels: { position: "top" },
+                        },
+                    },
+                    dataLabels: {
+                        enabled: true,
+                        offsetY: -10,
+                        // Make the numbers readable on white
+                        style: {
+                            fontSize: "12px",
+                            fontWeight: 700,
+                            colors: ["#0f172a"], // dark slate text
+                        },
+                        // Kill the “black card” pill behind numbers
+                        background: {
+                            enabled: true,
+                            borderRadius: 8,
+                            padding: 4,
+                            borderWidth: 1,
+                            borderColor: "#e2e8f0", // thin border
+                            opacity: 1,
+                        },
+                        formatter: (v) => this.formatShortCurrency(v),
+                    },
+
+                    xaxis: {
+                        categories: [],
+                        axisBorder: { show: false },
+                        axisTicks: { show: false },
+                        labels: {
+                            rotate: -10,
+                            trim: true,
+                            style: { fontSize: "12px", colors: "#334155" },
+                        }, // slate-700
+                        tooltip: { enabled: false },
+                    },
+                    yaxis: {
+                        tickAmount: 4,
+                        labels: {
+                            style: { fontSize: "12px", colors: "#475569" }, // slate-600
+                            formatter: (v) =>
+                                this.formatShortCurrency(v, {
+                                    withSymbol: false,
+                                }),
+                        },
+                    },
+                    tooltip: {
+                        shared: false,
+                        x: { show: true },
+                        y: { formatter: (v) => this.money(v) },
+                    },
+                    legend: { show: false },
+
+                    // We will set this dynamically so that:
+                    // - default bars are neutral slate
+                    // - top 3 months are teal accents
+                    colors: [],
+
+                    // Average line: we’ll inject dynamically; making it SOLID & subtle
+                    annotations: { yaxis: [] },
+
+                    states: {
+                        hover: { filter: { type: "darken", value: 0.85 } },
+                        active: { filter: { type: "darken", value: 0.8 } },
+                    },
+                    responsive: [
+                        {
+                            breakpoint: 992,
+                            options: {
+                                plotOptions: { bar: { columnWidth: "56%" } },
+                                dataLabels: {
+                                    offsetY: -8,
+                                    style: { fontSize: "11px" },
+                                },
+                                xaxis: {
+                                    labels: {
+                                        rotate: -18,
+                                        style: { fontSize: "11px" },
+                                    },
+                                },
+                            },
+                        },
+                    ],
+                },
+            },
         };
     },
     computed: {
@@ -1423,6 +1563,128 @@ export default {
         await this.bootstrap();
     },
     methods: {
+        formatShortCurrency(v, { withSymbol = true } = {}) {
+            const n = Number(v || 0);
+            const sym = withSymbol ? this?.currency || "" : "";
+            return Math.round(n).toString() + sym;
+        },
+
+        formatMonthLabel(dateObj) {
+            // Returns "MMM YYYY" with current locale (e.g., "janv. 2025")
+            try {
+                return dateObj.toLocaleDateString(this.locale || "fr-FR", {
+                    month: "short",
+                    year: "numeric",
+                });
+            } catch (_) {
+                const y = dateObj.getFullYear();
+                const m = String(dateObj.getMonth() + 1).padStart(2, "0");
+                return `${y}-${m}`;
+            }
+        },
+        computeMonthlySales(orders, monthsBack = 12, { showAvg = true } = {}) {
+            const now = new Date();
+            const start = new Date(
+                now.getFullYear(),
+                now.getMonth() - (monthsBack - 1),
+                1
+            );
+
+            const labels = [];
+            const keys = [];
+            for (let i = 0; i < monthsBack; i++) {
+                const d = new Date(
+                    start.getFullYear(),
+                    start.getMonth() + i,
+                    1
+                );
+                const key = `${d.getFullYear()}-${String(
+                    d.getMonth() + 1
+                ).padStart(2, "0")}`;
+                keys.push(key);
+                labels.push(this.formatMonthLabel(d));
+            }
+
+            const map = {};
+            orders.forEach((o) => {
+                const dt = o.created_at ? new Date(o.created_at) : new Date();
+                const key = `${dt.getFullYear()}-${String(
+                    dt.getMonth() + 1
+                ).padStart(2, "0")}`;
+                map[key] = (map[key] || 0) + this.safeNum(o.total);
+            });
+
+            const totals = keys.map((k) => this.safeNum(map[k] || 0));
+
+            const avg = totals.length
+                ? totals.reduce((a, c) => a + c, 0) / totals.length
+                : 0;
+
+            // ---- Palette tuned for white backgrounds ----
+            // Default: neutral slate for readability
+            const neutral = "#64748b"; // slate-500
+            const neutralDark = "#475569"; // slate-600 (hover darken)
+            // Accents for top 3 months in your teal family
+            const teal1 = "#0ea5a6"; // brand
+            const teal2 = "#0f766e"; // deeper
+            const teal3 = "#14b8a6"; // minty
+
+            // Find top 3 indices
+            const orderIdx = totals
+                .map((v, i) => ({ v, i }))
+                .sort((a, b) => b.v - a.v);
+            const topIdx = orderIdx.slice(0, 3).map((x) => x.i);
+
+            // Build colors: everyone neutral, top 3 accented
+            const colors = totals.map((_, i) => {
+                if (topIdx[0] === i) return teal1;
+                if (topIdx[1] === i) return teal2;
+                if (topIdx[2] === i) return teal3;
+                return neutral;
+            });
+
+            this.monthlyChart.series = [{ name: "Ventes", data: totals }];
+            this.monthlyChart.options = {
+                ...this.monthlyChart.options,
+                colors,
+                xaxis: {
+                    ...this.monthlyChart.options.xaxis,
+                    categories: labels,
+                },
+                // Solid, subtle average line (or none if you prefer)
+                annotations: {
+                    yaxis:
+                        showAvg && avg > 0
+                            ? [
+                                  {
+                                      y: avg,
+                                      borderColor: "#cbd5e1", // slate-300
+                                      strokeDashArray: 0, // SOLID (no dashed)
+                                      opacity: 1,
+                                      label: {
+                                          text: `Moyenne: ${this.formatShortCurrency(
+                                              avg
+                                          )}`,
+                                          borderColor: "#cbd5e1",
+                                          style: {
+                                              background: "#f8fafc",
+                                              color: "#0f172a",
+                                              fontSize: "11px",
+                                              fontWeight: 700,
+                                          },
+                                          offsetX: 8,
+                                      },
+                                  },
+                              ]
+                            : [],
+                },
+                states: {
+                    hover: { filter: { type: "darken", value: 0.9 } },
+                    active: { filter: { type: "darken", value: 0.85 } },
+                },
+            };
+        },
+
         // ===== utilitaires =====
         money(n) {
             return parseFloat(n || 0).toFixed(2) + this.currency;
@@ -1947,117 +2209,122 @@ export default {
             if (Array.isArray(json)) return json;
             return [];
         },
-       aggregateReport(orders, groupBy) {
-  // ---- Special path for "article" grouping
-  if (groupBy === "article") {
-    const bucket = {};
-    orders.forEach((o) => {
-      const items = this.adaptItems(o);
-      const seenThisOrder = new Set(); // to count the order only once per article
-      items.forEach((it) => {
-        const key = it.item_name || "—";
-        if (!bucket[key]) {
-          bucket[key] = {
-            group: key,
-            orders: 0,
-            items: 0,
-            subtotal: 0,
-            discount: 0, // stays 0 unless you allocate order-level discounts
-            total: 0,
-          };
-        }
-        const b = bucket[key];
-        // quantities & amounts
-        const qty = this.safeNum(it.quantity);
-        const line = this.safeNum(it.line_total); // already unit * qty in your adaptItems
-        b.items += qty;
-        b.subtotal += line; // treat as gross for the article
-        b.total += line;    // same as subtotal unless you allocate discounts
+        aggregateReport(orders, groupBy) {
+            // ---- Special path for "article" grouping
+            if (groupBy === "article") {
+                const bucket = {};
+                orders.forEach((o) => {
+                    const items = this.adaptItems(o);
+                    const seenThisOrder = new Set(); // to count the order only once per article
+                    items.forEach((it) => {
+                        const key = it.item_name || "—";
+                        if (!bucket[key]) {
+                            bucket[key] = {
+                                group: key,
+                                orders: 0,
+                                items: 0,
+                                subtotal: 0,
+                                discount: 0, // stays 0 unless you allocate order-level discounts
+                                total: 0,
+                            };
+                        }
+                        const b = bucket[key];
+                        // quantities & amounts
+                        const qty = this.safeNum(it.quantity);
+                        const line = this.safeNum(it.line_total); // already unit * qty in your adaptItems
+                        b.items += qty;
+                        b.subtotal += line; // treat as gross for the article
+                        b.total += line; // same as subtotal unless you allocate discounts
 
-        // count distinct orders that contain this article
-        if (!seenThisOrder.has(key)) {
-          b.orders += 1;
-          seenThisOrder.add(key);
-        }
-      });
-    });
+                        // count distinct orders that contain this article
+                        if (!seenThisOrder.has(key)) {
+                            b.orders += 1;
+                            seenThisOrder.add(key);
+                        }
+                    });
+                });
 
-    const rows = Object.values(bucket).sort((a, b) =>
-      a.group.localeCompare(b.group)
-    );
-    const totals = rows.reduce(
-      (t, r) => ({
-        orders: t.orders + r.orders,
-        items: t.items + r.items,
-        subtotal: t.subtotal + r.subtotal,
-        discount: t.discount + r.discount,
-        total: t.total + r.total,
-      }),
-      { orders: 0, items: 0, subtotal: 0, discount: 0, total: 0 }
-    );
-    return { rows, totals };
-  }
+                const rows = Object.values(bucket).sort((a, b) =>
+                    a.group.localeCompare(b.group)
+                );
+                const totals = rows.reduce(
+                    (t, r) => ({
+                        orders: t.orders + r.orders,
+                        items: t.items + r.items,
+                        subtotal: t.subtotal + r.subtotal,
+                        discount: t.discount + r.discount,
+                        total: t.total + r.total,
+                    }),
+                    { orders: 0, items: 0, subtotal: 0, discount: 0, total: 0 }
+                );
+                return { rows, totals };
+            }
 
-  // ---- Existing logic for other groupings
-  const bucket = {};
-  const add = (key, o) => {
-    if (!bucket[key])
-      bucket[key] = {
-        group: key,
-        orders: 0,
-        items: 0,
-        subtotal: 0,
-        discount: 0,
-        total: 0,
-      };
-    const b = bucket[key];
-    b.orders += 1;
-    const items = this.adaptItems(o);
-    b.items += items.reduce((s, it) => s + this.safeNum(it.quantity), 0);
-    b.subtotal += this.safeNum(o.subtotal);
-    b.discount += this.safeNum(o.discount_amount);
-    b.total += this.safeNum(o.total);
-  };
+            // ---- Existing logic for other groupings
+            const bucket = {};
+            const add = (key, o) => {
+                if (!bucket[key])
+                    bucket[key] = {
+                        group: key,
+                        orders: 0,
+                        items: 0,
+                        subtotal: 0,
+                        discount: 0,
+                        total: 0,
+                    };
+                const b = bucket[key];
+                b.orders += 1;
+                const items = this.adaptItems(o);
+                b.items += items.reduce(
+                    (s, it) => s + this.safeNum(it.quantity),
+                    0
+                );
+                b.subtotal += this.safeNum(o.subtotal);
+                b.discount += this.safeNum(o.discount_amount);
+                b.total += this.safeNum(o.total);
+            };
 
-  orders.forEach((o) => {
-    let key = "—";
-    if (groupBy === "day") {
-      key = this.dateKey(o.created_at);
-    } else if (groupBy === "hour") {
-      const dt = o.created_at ? new Date(o.created_at) : new Date();
-      const dkey = this.dateKey(dt);
-      const hh = ("0" + dt.getHours()).slice(-2);
-      key = `${dkey} ${hh}:00`;
-    } else if (groupBy === "cashier") {
-      key = this.cashierName(o) || "—";
-    } else if (groupBy === "order_type") {
-      key = (o.order_type || "—").toUpperCase();
-    } else if (groupBy === "payment_method") {
-      const methods = this.payments(o).map((p) =>
-        (p.method || "—").toUpperCase()
-      );
-      key = methods.length ? methods.join(", ") : "—";
-    } else if (groupBy === "status") {
-      key = (o.status || "paid").toUpperCase();
-    }
-    add(key, o);
-  });
+            orders.forEach((o) => {
+                let key = "—";
+                if (groupBy === "day") {
+                    key = this.dateKey(o.created_at);
+                } else if (groupBy === "hour") {
+                    const dt = o.created_at
+                        ? new Date(o.created_at)
+                        : new Date();
+                    const dkey = this.dateKey(dt);
+                    const hh = ("0" + dt.getHours()).slice(-2);
+                    key = `${dkey} ${hh}:00`;
+                } else if (groupBy === "cashier") {
+                    key = this.cashierName(o) || "—";
+                } else if (groupBy === "order_type") {
+                    key = (o.order_type || "—").toUpperCase();
+                } else if (groupBy === "payment_method") {
+                    const methods = this.payments(o).map((p) =>
+                        (p.method || "—").toUpperCase()
+                    );
+                    key = methods.length ? methods.join(", ") : "—";
+                } else if (groupBy === "status") {
+                    key = (o.status || "paid").toUpperCase();
+                }
+                add(key, o);
+            });
 
-  const rows = Object.values(bucket).sort((a, b) =>
-    a.group.localeCompare(b.group)
-  );
-  const totals = rows.reduce(
-    (t, r) => ({
-      orders: t.orders + r.orders,
-      items: t.items + r.items,
-      subtotal: t.subtotal + r.subtotal,
-      discount: t.discount + r.discount,
-      total: t.total + r.total,
-    }),
-    { orders: 0, items: 0, subtotal: 0, discount: 0, total: 0 }
-  );
-  return { rows, totals };
-},
+            const rows = Object.values(bucket).sort((a, b) =>
+                a.group.localeCompare(b.group)
+            );
+            const totals = rows.reduce(
+                (t, r) => ({
+                    orders: t.orders + r.orders,
+                    items: t.items + r.items,
+                    subtotal: t.subtotal + r.subtotal,
+                    discount: t.discount + r.discount,
+                    total: t.total + r.total,
+                }),
+                { orders: 0, items: 0, subtotal: 0, discount: 0, total: 0 }
+            );
+            return { rows, totals };
+        },
 
         exportReport() {
             if (!this.reports.rows.length) return;
@@ -2135,19 +2402,39 @@ export default {
             this.dashboard.loading = true;
             try {
                 const now = new Date();
-                const start = new Date(now);
-                start.setDate(start.getDate() - 13);
-                const from = this.toIsoDate(start);
+
+                // --- (A) Range for your existing 14-day trend ---
+                const start14 = new Date(now);
+                start14.setDate(start14.getDate() - 13);
+                const from14 = this.toIsoDate(start14);
                 const to = this.toIsoDate(now);
 
-                const orders = await this.fetchAllOrdersForRange({ from, to });
-                this.computeDashboard(orders, from, to);
+                // --- (B) Range for "12 derniers mois" (from the 1st day 11 months ago) ---
+                const start12 = new Date(
+                    now.getFullYear(),
+                    now.getMonth() - 11,
+                    1
+                );
+                const from12 = this.toIsoDate(start12);
+
+                // Fetch both in parallel for performance
+                const [orders14, orders12] = await Promise.all([
+                    this.fetchAllOrdersForRange({ from: from14, to }),
+                    this.fetchAllOrdersForRange({ from: from12, to }),
+                ]);
+
+                // Existing dashboard computations (trend14, KPIs, etc.) stay as-is
+                this.computeDashboard(orders14, from14, to);
+
+                // NEW: build the monthly chart from the 12-month set
+                this.computeMonthlySales(orders12, 12);
             } catch (_) {
                 // ignore
             } finally {
                 this.dashboard.loading = false;
             }
         },
+
         computeDashboard(orders, from, to) {
             const byDay = {};
             const addDay = (d, v) => {
@@ -2641,5 +2928,39 @@ export default {
 .mx-1 {
     margin-left: 0.25rem;
     margin-right: 0.25rem;
+}
+.apex-wrap {
+    width: 100%;
+    min-height: 320px;
+}
+:deep(.apexcharts-yaxis-label) {
+    font-variant-numeric: tabular-nums;
+}
+.apex-wrap {
+    width: 100%;
+    min-height: 320px;
+}
+</style>
+
+<style>
+/* Global Apex tune-ups inside your card */
+.bo-card .apexcharts-datalabel {
+    letter-spacing: 0.1px;
+}
+
+.bo-card .apexcharts-yaxis .apexcharts-yaxis-label {
+    font-variant-numeric: tabular-nums;
+    color: #475569; /* slate-600 */
+}
+
+/* Annotation pill */
+.bo-card .apexcharts-yaxis-annotations .apexcharts-annotation-label {
+    border-radius: 8px;
+    padding: 4px 8px;
+}
+
+/* Make neutral bars darken slightly on hover for feedback */
+.bo-card .apexcharts-series path:hover {
+    filter: brightness(0.95);
 }
 </style>

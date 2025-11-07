@@ -1208,9 +1208,7 @@
             class="modal-backdrop fade show"
             @click="closeScan()"
         ></div>
-        <!-- ===== Held Orders Modal ===== -->
-        <!-- ===== Held Orders Modal (enhanced) ===== -->
-        <div
+       <div
             class="modal fade held-modal"
             :class="{ show: showHeldModal }"
             style="display: block"
@@ -1275,7 +1273,7 @@
                         </div>
 
                         <!-- Cards grid (max 2 per row) -->
-                        <div class="held-grid-modern" v-else>
+                        <div class="held-grid-modern" v-else style="align-items:start;">
                             <div
                                 v-for="o in filteredHeld"
                                 :key="o._key || o.time"
@@ -1297,17 +1295,26 @@
                                 @keydown.space.prevent="
                                     resumeParkedByKey(parkKey(o))
                                 "
-                                :aria-label="`Load held order #${o.id || ''}`"
+                                :aria-label="`Load held order T${o.table || ''}`"
+                                style="align-self:start; height:auto;"
                             >
                                 <!-- top row -->
                                 <div class="held-card-top">
-                                    <div class="held-id">#{{ o.id }}</div>
+                                    <!-- LEFT: table number as T{number} -->
+                                    <div class="held-id">
+                                        <template v-if="o.table">
+                                            T{{ o.table }}
+                                        </template>
+                                        <template v-else>
+                                            <!-- no table assigned -->
+                                            —
+                                        </template>
+                                    </div>
+
+                                    <!-- RIGHT: order type only -->
                                     <div class="held-type">
                                         <span class="chip-type">
                                             {{ (o.type || "").toUpperCase() }}
-                                            <span v-if="o.table"
-                                                >• T{{ o.table }}</span
-                                            >
                                         </span>
                                         <span
                                             v-if="
@@ -1431,6 +1438,7 @@
                 </div>
             </div>
         </div>
+
 
         <div
             v-if="showHeldModal"

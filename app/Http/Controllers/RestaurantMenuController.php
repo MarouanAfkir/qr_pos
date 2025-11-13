@@ -19,7 +19,7 @@ class RestaurantMenuController extends Controller
             ->acceptJson()
             ->withOptions(['verify' => false])
             ->withHeaders(['Accept-Language' => 'en'])
-            ->get("{$baseUrl}/restaurants/{$uuid}/info")
+            ->get("{$baseUrl}/restaurants/{$uuid}")
             ->throw()
             ->json();
         $articles = Http::withToken($token)
@@ -40,7 +40,6 @@ class RestaurantMenuController extends Controller
             ->json();
         //Get users pos_code to send it to the blade
         $users = DB::table('users')->where('is_admin',0)->select('pos_code')->get();
-
         /* -------- Render Blade -------- */
         return view('pos', [
             'articles'   => $articles   ?? [],

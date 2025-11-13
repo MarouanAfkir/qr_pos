@@ -261,6 +261,7 @@
                     <div class="categories-scroll cats-list" id="catPills">
                         <!-- All -->
                         <button
+                            v-if="allCategoriesEnabled"
                             class="cat-btn"
                             :class="{ active: activeCat === '__all' }"
                             @click="setCat('__all')"
@@ -1208,7 +1209,9 @@
             class="modal-backdrop fade show"
             @click="closeScan()"
         ></div>
-       <div
+
+        <!-- Held Orders Modal (with product photos) -->
+        <div
             class="modal fade held-modal"
             :class="{ show: showHeldModal }"
             style="display: block"
@@ -1273,7 +1276,11 @@
                         </div>
 
                         <!-- Cards grid (max 2 per row) -->
-                        <div class="held-grid-modern" v-else style="align-items:start;">
+                        <div
+                            class="held-grid-modern"
+                            v-else
+                            style="align-items: start"
+                        >
                             <div
                                 v-for="o in filteredHeld"
                                 :key="o._key || o.time"
@@ -1295,9 +1302,33 @@
                                 @keydown.space.prevent="
                                     resumeParkedByKey(parkKey(o))
                                 "
-                                :aria-label="`Load held order T${o.table || ''}`"
-                                style="align-self:start; height:auto;"
+                                :aria-label="`Load held order T${
+                                    o.table || ''
+                                }`"
+                                style="align-self: start; height: auto"
                             >
+                                <!-- Cover image (first available line image) -->
+                                <div
+                                    v-if="
+                                        o.lines &&
+                                        o.lines.length &&
+                                        o.lines[0].image
+                                    "
+                                    class="held-cover"
+                                >
+                                    <img
+                                        class="held-cover-img"
+                                        loading="lazy"
+                                        :src="
+                                            o.lines[0].image_url || placeholder
+                                        "
+                                        :alt="
+                                            o.lines[0].name ||
+                                            'Held order image'
+                                        "
+                                    />
+                                </div>
+
                                 <!-- top row -->
                                 <div class="held-card-top">
                                     <!-- LEFT: table number as T{number} -->
@@ -1353,12 +1384,24 @@
                                         :key="idx"
                                         class="held-item"
                                     >
-                                        <!-- top row: name (left) + quantity (right) -->
+                                        <!-- top row: thumbnail + name (left) + quantity (right) -->
                                         <div class="held-line-main">
+                                            <!-- item thumb -->
+                                            <img
+                                                class="held-item-thumb"
+                                                loading="lazy"
+                                                :src="
+                                                    ln.image_url || placeholder
+                                                "
+                                                :alt="ln.name || 'Item image'"
+                                            />
+
                                             <span
                                                 class="held-item-name text-truncate"
-                                                >{{ ln.name }}</span
                                             >
+                                                {{ ln.name }}
+                                            </span>
+
                                             <span class="held-item-qty"
                                                 >× {{ ln.qty }}</span
                                             >
@@ -1438,7 +1481,6 @@
                 </div>
             </div>
         </div>
-
 
         <div
             v-if="showHeldModal"
@@ -1859,6 +1901,17 @@ export default {
         };
     },
     computed: {
+        firstCategorySlug() {
+            const list = this.normalizedCategories || [];
+            return list.length ? list[0].slug : "__all";
+        },
+        allCategoriesEnabled() {
+            // default to true if option missing, change to false if you prefer
+            const opt = this.restaurant?.options?.find(
+                (o) => o.key === "all_categories"
+            );
+            return opt ? !!opt.is_enabled : true;
+        },
         disabledTables() {
             const set = new Set();
             if (this.currentTable != null) set.add(String(this.currentTable));
@@ -2171,6 +2224,7 @@ export default {
 
         // 3) Now that parkedOrders is loaded, fix missing ids if any
         this.migrateHeldIds();
+        this.$nextTick(() => this.ensureValidActiveCat());
     },
 
     watch: {
@@ -2198,8 +2252,37 @@ export default {
                 this.saveCartState();
             },
         },
+        allCategoriesEnabled(val) {
+            // If "All" just got turned OFF and it was active, jump to first category
+            this.ensureValidActiveCat();
+        },
+        normalizedCategories: {
+            handler() {
+                // Categories changed (loaded/refreshed): re-check selection
+                this.ensureValidActiveCat();
+            },
+        },
     },
     methods: {
+        ensureValidActiveCat() {
+            // If "All" is disabled OR current activeCat doesn’t exist anymore,
+            // jump to the first available category.
+            const list = this.normalizedCategories || [];
+            const hasActive = list.some((c) => c.slug === this.activeCat);
+
+            if (
+                !this.allCategoriesEnabled &&
+                (this.activeCat === "__all" || !hasActive)
+            ) {
+                this.activeCat = this.firstCategorySlug;
+                return;
+            }
+
+            // If "All" is enabled but activeCat is invalid for any reason, fall back:
+            if (this.allCategoriesEnabled && !hasActive && list.length) {
+                this.activeCat = this.firstCategorySlug;
+            }
+        },
         nextHoldNumber() {
             const arr = this.parkedOrders || [];
             if (!arr.length) return 1; // reinit to 1 when empty
@@ -2472,7 +2555,11 @@ export default {
 
         // Categories
         setCat(slug) {
-            this.activeCat = slug;
+            if (slug === "__all" && !this.allCategoriesEnabled) {
+                this.activeCat = this.firstCategorySlug; // auto-skip to first real cat
+            } else {
+                this.activeCat = slug;
+            }
         },
 
         // Item modal helpers
@@ -5080,51 +5167,94 @@ body {
 }
 /* Put all variation groups on one row; wrap when needed */
 .held-item-opts {
-  grid-column: 1 / -1;
-  margin-top: 0.15rem;
-  color: var(--muted);
-  font-size: 0.85rem;
-  line-height: 1.35;
-  display: flex;            /* ⬅️ was block/grid; now flex row */
-  flex-wrap: wrap;          /* wrap to next line when tight */
-  gap: 2px 10px;            /* row-gap, column-gap between groups */
-  white-space: normal;
-  word-break: break-word;
+    grid-column: 1 / -1;
+    margin-top: 0.15rem;
+    color: var(--muted);
+    font-size: 0.85rem;
+    line-height: 1.35;
+    display: flex; /* ⬅️ was block/grid; now flex row */
+    flex-wrap: wrap; /* wrap to next line when tight */
+    gap: 2px 10px; /* row-gap, column-gap between groups */
+    white-space: normal;
+    word-break: break-word;
 }
 
 /* Each variation group (e.g., "Size: Large") sits inline */
 .held-opt-group {
-  display: inline-flex;     /* label + values stay together */
-  align-items: baseline;
+    display: inline-flex; /* label + values stay together */
+    align-items: baseline;
 }
 
 /* Bold dot between variation groups (not the first) */
 .held-opt-group:not(:first-child)::before {
-  content: "•";
-  font-weight: 900;
-  display: inline-block;
-  margin: 0 0.4rem;
-  line-height: 1;
+    content: "•";
+    font-weight: 900;
+    display: inline-block;
+    margin: 0 0.4rem;
+    line-height: 1;
 }
 
 /* Keep the label bold and tight to its values */
 .held-opt-label {
-  font-weight: 700;
-  margin-right: 0.25rem;
+    font-weight: 700;
+    margin-right: 0.25rem;
 }
 
 /* Keep bold dot between option values inside the same group */
 .held-opt-values .held-val:not(:first-child)::before {
-  content: "•";
-  font-weight: 900;
-  display: inline-block;
-  margin: 0 0.35rem;
-  line-height: 1;
+    content: "•";
+    font-weight: 900;
+    display: inline-block;
+    margin: 0 0.35rem;
+    line-height: 1;
 }
 
 /* Remove old vertical stacking spacing, if you had it */
 .held-opt-group + .held-opt-group {
-  margin-top: 0; /* ⬅️ neutralize any previous vertical margin */
+    margin-top: 0; /* ⬅️ neutralize any previous vertical margin */
 }
 
+.held-cover {
+    position: relative;
+    width: 100%;
+    border-radius: 0.75rem;
+    overflow: hidden;
+    margin-bottom: 0.75rem;
+    background: #f5f7fa;
+}
+.held-cover::before {
+    content: "";
+    display: block;
+    padding-top: 56.25%; /* 16:9 ratio */
+}
+.held-cover-img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Line item thumbnail */
+.held-line-main {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 0.5rem 0.75rem;
+}
+.held-item-thumb {
+    width: 40px;
+    height: 40px;
+    border-radius: 0.5rem;
+    object-fit: cover;
+    background: #f3f6f9;
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.04);
+}
+.held-item-name {
+    min-width: 0; /* enable text-truncate to work in grid */
+}
+.held-item-qty {
+    font-weight: 600;
+    color: #3f4254;
+}
 </style>

@@ -45,6 +45,7 @@ class OrderController extends Controller
             $q->where('created_by', $createdBy);
         }
 
+
         return $q->latest('id')->paginate($request->integer('per_page', 20));
     }
 
